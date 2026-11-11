@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block body %}<h4>{{ incident.id }} - {{ incident.title }}</h4>
+<p>{{ incident.description }}</p><p>Status <b>{{ incident.status.value }}</b> | Priority <b>{{ incident.priority.name if incident.priority else '-' }}</b> | Category {{ incident.category.value }}</p>
+{% if incident.resolution %}<div class="alert alert-success">Resolution: {{ incident.resolution }}</div>{% endif %}
+<h6>History</h6><ul>{% for h in history %}<li>{{ h.timestamp.strftime('%H:%M:%S') }} - {{ h.description }}</li>{% endfor %}</ul>
+<!-- TODO(Kevalin): reply form, verify/reject buttons, feedback form -->{% endblock %}
