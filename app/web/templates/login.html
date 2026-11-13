@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% block body %}<div class="row g-4">
-<div class="col-md-6"><h4>Log in</h4><form method="post" action="/login">
+<div class="col-md-6"><h4>Log in</h4>{% if sso and 'google' in sso %}<a class="btn btn-outline-dark w-100 mb-3" href="/login/google">Sign in with Google</a>{% endif %}<form method="post" action="/login">
 <input class="form-control mb-2" name="email" type="email" placeholder="Email" required>
 <input class="form-control mb-2" name="password" type="password" placeholder="Password" required>
 <button class="btn btn-primary">Log in</button></form><p class="text-muted small mt-2">Demo: e1@itsm.local, t1@itsm.local, admin@itsm.local / password123</p></div>

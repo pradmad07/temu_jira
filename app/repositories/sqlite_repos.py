@@ -56,6 +56,7 @@ class SqliteUserRepository(UserRepository):
         return [_user(r) for r in self._db.query("SELECT * FROM users WHERE role=? AND active=1", (Role.TECHNICIAN.value,))]
     def list_all(self): return [_user(r) for r in self._db.query("SELECT * FROM users ORDER BY name")]
     def set_active(self, user_id, active): self._db.execute("UPDATE users SET active=? WHERE id=?", (int(active), user_id))
+    def set_password_hash(self, user_id, password_hash): self._db.execute("UPDATE users SET password_hash=? WHERE id=?", (password_hash, user_id))
 
 _INC_COLS = ("id,reporter_id,title,description,category,service_id,impact,urgency,affected_users,priority,status,assigned_to,"
              "created_at,resolution,acknowledged_at,resolved_at,closed_at,response_due,resolution_due")

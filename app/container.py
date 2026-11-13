@@ -1,4 +1,5 @@
 """Builds the object graph once (manual dependency injection - like wiring beans by hand in Java)."""
+import os
 from app.repositories.sqlite_repos import *
 from app.domain.clock import Clock
 from app.domain.enums import Category
@@ -24,7 +25,8 @@ class Container:
         self.config = SqliteConfigRepository(self.db)
         self.bus = EventBus(); self.bus.subscribe(AuditObserver(self.audit).on_event)   # audit first: it must see every event
         # TODO(Gaurav): self.bus.subscribe(NotificationService([InAppChannel(), SimulatedEmailChannel()]).on_event)
-        self.auth = AuthService(self.users)
+        domains = [d.strip().lower() for d in os.environ.get("ITSM_SSO_DOMAINS", "").split(",") if d.strip()]   # e.g. company.com
+        self.auth = AuthService(self.users, sso_domains=domains or None)
         self.priority = FixedPriority()        # TODO(Pradhyumn): ScoredPriority()
         self.sla = SlaService(self.sla_policies, self.incidents, self.bus, self.clock, self.violations)
         self.incident_service = IncidentService(self.incidents, self.services, self.categories, self.users, self.bus,

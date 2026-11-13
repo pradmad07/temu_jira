@@ -18,6 +18,8 @@ class UserRepository(ABC):
     def list_all(self) -> list[User]: ...
     @abstractmethod
     def set_active(self, user_id: str, active: bool) -> None: ...
+    @abstractmethod
+    def set_password_hash(self, user_id: str, password_hash: str) -> None: """Used to upgrade old hashes at login."""
 
 class IncidentRepository(ABC):
     @abstractmethod
