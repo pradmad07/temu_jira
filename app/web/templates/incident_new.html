@@ -2,7 +2,7 @@
 <input class="form-control mb-2" name="title" placeholder="Short summary" maxlength="200" required>
 <textarea class="form-control mb-2" name="description" rows="4" placeholder="What happened?" required></textarea>
 <select class="form-select mb-2" name="service_id">{% for s in services %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
-<select class="form-select mb-2" name="category">{% for c in categories %}<option value="{{ c.value }}">{{ c.value.title() }}</option>{% endfor %}</select>
+<select class="form-select mb-2" name="category">{% for c in categories %}<option value="{{ c }}">{{ c.title() }}</option>{% endfor %}</select>
 <div class="row mb-2"><div class="col"><label class="small">Impact (1-5)</label><input class="form-control" type="number" name="impact" min="1" max="5" value="3"></div>
 <div class="col"><label class="small">Urgency (1-5)</label><input class="form-control" type="number" name="urgency" min="1" max="5" value="3"></div>
 <div class="col"><label class="small">Users affected</label><input class="form-control" type="number" name="affected_users" min="1" value="1"></div></div>

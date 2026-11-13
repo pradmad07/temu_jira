@@ -18,9 +18,9 @@ interface -> `abc.ABC` + `@abstractmethod` | private field -> `self._x` + `@prop
 ## Owners (every one of you must explain your part in the video)
 | Person | Owns | Done when these tests pass |
 |---|---|---|
-| Kevalin | domain, states, events, repos, auth, incident_service use cases, employee pages, integration | test_incident_service, test_states, test_auth |
-| Pradhyumn | priority.py, assignment.py (2 strategies + recommendation), duplicates.py, technician pages | test_priority, test_assignment, test_duplicates |
-| Gaurav | sla_service.py, notifications.py (2 channels), reports.py, `search()` (5+ filters), admin pages | test_sla, test_notifications |
+| Kevalin | domain, repos, auth, integration. Lifecycle use cases are DONE (read `incident_service.py` first: it is the pattern for everything). Remaining: employee pages for reply / verify / reject / feedback | test_lifecycle_service, test_incident_service, test_states, test_auth (all green now) |
+| Pradhyumn | priority.py, assignment.py (2 strategies + `recommend()`), duplicates.py, technician pages (call `incident_service` + `collab`, both exist). Then switch `container.py` to `ScoredPriority()` | test_priority, test_assignment, test_duplicates |
+| Gaurav | `SlaService.scan()` (`deadlines_for` is DONE), notifications.py (2 channels), reports.py, `search()` with `IncidentFilter`, admin pages (call `AdminService`, it exists) | test_sla, test_notifications, test_search |
 
 Each person also: adds 5 more tests of their own (15+ total required), writes their own report section, takes screenshots.
 Intelligent features: (1) technician recommendation (2) duplicate detection. Extra if all green by Nov 16: auto-escalation of unacknowledged P1 (inside `SlaService.scan`).
@@ -45,6 +45,5 @@ Fallback: if a module has nothing merged by Nov 13 night, Kevalin writes a simpl
 ## Cut list (do NOT build): SSO, admin-defined lifecycle stages, theme/widget builder, packet batching, "painfulness" ratings, React, cloud hosting, ML.
 Fuzzy search = simple text match. AI = optional; rule-based is explicitly acceptable.
 
-## Known gaps in this skeleton (we must handle)
-Employee: reply to info requests, verify/reject, feedback. Technician + admin pages. `search()` filters. Atomic incident+audit commit
-(`Database.transaction()`). Audit/notification for reassignment. Pagination. SLA background thread (start it in main.py).
+## Design, scaling and known gaps
+See docs/DESIGN.md (requirement traceability, patterns, scaling path, known gaps) and docs/SECURITY.md.

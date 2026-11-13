@@ -8,3 +8,5 @@ class TechnicianUnavailableError(ItsmError): pass
 class DuplicateIncidentError(ItsmError): pass
 class MissingSlaError(ItsmError): pass
 class PersistenceError(ItsmError): pass
+class WorkloadExceededError(TechnicianUnavailableError): pass
+class ExternalServiceError(ItsmError): """Email/SMS/AI provider or network failed."""

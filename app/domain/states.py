@@ -15,6 +15,7 @@ class IncidentState:
     def verify(self, inc): self._deny("verify")
     def reject(self, inc): self._deny("reject")
     def close(self, inc): self._deny("close")
+    def reassign(self, inc): self._deny("reassign")
 
 class NewState(IncidentState):
     status = Status.NEW
@@ -25,12 +26,15 @@ class ClassifiedState(IncidentState):
 class AssignedState(IncidentState):
     status = Status.ASSIGNED
     def acknowledge(self, inc): return state_for(Status.ACKNOWLEDGED)
+    def reassign(self, inc): return state_for(Status.ASSIGNED)   # new technician must acknowledge again
 class AcknowledgedState(IncidentState):
     status = Status.ACKNOWLEDGED
     def start(self, inc): return state_for(Status.IN_PROGRESS)
+    def reassign(self, inc): return state_for(Status.ASSIGNED)
 class InProgressState(IncidentState):
     status = Status.IN_PROGRESS
     def resolve(self, inc): return state_for(Status.RESOLVED)
+    def reassign(self, inc): return state_for(Status.ASSIGNED)
 class ResolvedState(IncidentState):
     status = Status.RESOLVED
     def verify(self, inc): return state_for(Status.VERIFIED)

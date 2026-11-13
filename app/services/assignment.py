@@ -22,3 +22,13 @@ class SkillBasedAssignment(AssignmentStrategy):
     def choose(self, incident, candidates, workloads): raise NotImplementedError("TODO(Pradhyumn)")
 class LoadBasedAssignment(AssignmentStrategy):
     def choose(self, incident, candidates, workloads): raise NotImplementedError("TODO(Pradhyumn)")
+
+# ---- Registry: which strategies exist. The ACTIVE one is data (config table, key 'assignment_strategy'), so an admin
+# ---- switches it without a deploy, and a new strategy = one new class + one entry here. Nothing else changes (open/closed).
+from app.domain.exceptions import ValidationError
+STRATEGIES: dict = {"skill": SkillBasedAssignment, "load": LoadBasedAssignment}
+DEFAULT_STRATEGY = "skill"
+
+def strategy_by_name(name: str) -> AssignmentStrategy:
+    try: return STRATEGIES[name]()
+    except KeyError: raise ValidationError(f"Unknown assignment strategy '{name}'. Available: {', '.join(sorted(STRATEGIES))}")

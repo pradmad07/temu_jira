@@ -2,6 +2,7 @@
 import hashlib, hmac, os
 from app.domain.enums import Role
 from app.domain.exceptions import AuthenticationError, ValidationError
+from app.domain.factories import UserFactory
 from app.domain.models import User
 
 class AuthService:
@@ -19,10 +20,10 @@ class AuthService:
         """Self-registration ALWAYS creates an EMPLOYEE; there is deliberately no role parameter."""
         if len(password or "") < 8: raise ValidationError("Password must be at least 8 characters")
         if self._users.get_by_email(email or ""): raise ValidationError("Email already registered")
-        user = User(name, email, self.hash_password(password), Role.EMPLOYEE)
+        user = UserFactory.create(Role.EMPLOYEE, name, email, self.hash_password(password))
         self._users.add(user); return user
     def login(self, email, password) -> User:
         user = self._users.get_by_email(email or "")
-        if user is None or not self._verify(password or "", user.password_hash):
+        if user is None or not user.active or not self._verify(password or "", user.password_hash):
             raise AuthenticationError("Invalid email or password")   # same message for both: no user enumeration
         return user
