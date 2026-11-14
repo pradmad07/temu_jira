@@ -2,7 +2,10 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
+from app.domain.filters import IncidentFilter
 from app.domain.permissions import Perm
+from app.services.assignment import strategy_by_name
+from app.services.duplicates import DuplicateDetector
 from .deps import container, require_permission, templates
 
 router = APIRouter(prefix="/technician")
@@ -30,6 +33,11 @@ def home(request: Request, user=technician):
 def detail(request: Request, incident_id: str, user=technician):
     c = container(request)
     incident = c.incident_service.get_incident(user, incident_id)
+    recent = c.incidents.search(IncidentFilter(service_id=incident.service_id), limit=50)
+    duplicates = DuplicateDetector().find_candidates(incident, recent)
+    strategy = strategy_by_name(c.config.get("assignment_strategy", "skill"))
+    candidates = c.users.list_technicians()
+    workloads = {candidate.id: c.incidents.count_active_by_technician(candidate.id) for candidate in candidates}
     return templates.TemplateResponse(
         request,
         "technician_detail.html",
@@ -38,6 +46,8 @@ def detail(request: Request, incident_id: str, user=technician):
             "incident": incident,
             "history": c.audit.list_for_incident(incident_id),
             "comments": c.collab.list_comments(user, incident_id),
+            "duplicates": duplicates,
+            "recommendations": strategy.recommend(incident, candidates, workloads),
         },
     )
 

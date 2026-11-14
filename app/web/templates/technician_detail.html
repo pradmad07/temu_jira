@@ -31,6 +31,10 @@
 
 <h6 class="mt-4">Comments and notes</h6>
 <ul>{% for comment in comments %}<li>{{ comment.kind }}: {{ comment.body }}</li>{% else %}<li>No comments yet.</li>{% endfor %}</ul>
+<h6>Possible duplicates</h6>
+<ul>{% for duplicate, score in duplicates %}<li>{{ duplicate.id }} - {{ duplicate.title }} ({{ "%.2f"|format(score) }})</li>{% else %}<li>No similar incidents found.</li>{% endfor %}</ul>
+<h6>Technician recommendations</h6>
+<ul>{% for recommendation in recommendations[:3] %}<li>{{ recommendation.technician.name }} ({{ "%.1f"|format(recommendation.score) }}): {{ recommendation.reasons|join(", ") }}</li>{% else %}<li>No eligible technicians.</li>{% endfor %}</ul>
 <h6>History</h6>
 <ul>{% for h in history %}<li>{{ h.timestamp.strftime('%H:%M:%S') }} - {{ h.description }}</li>{% endfor %}</ul>
 {% endblock %}

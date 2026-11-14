@@ -25,5 +25,6 @@ Complete the Pradhyumn workstream and restore a green test suite.
 - **Requirement Traceability:** `docs/DESIGN.md`
 
 ## Blockers/Notes
-- P8 UI duplicate/recommendation display, P9 additional test expansion, and P10 report/screenshots remain outside this checkpoint.
+- P8 duplicate/recommendation display and P9 additional edge-case tests are complete.
+- P10 report section and screenshots remain a manual deliverable.
 - Do not commit the supplied PDFs or image; they are project inputs, not application source.
