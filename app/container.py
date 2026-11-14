@@ -10,7 +10,7 @@ from app.services.auth_service import AuthService
 from app.services.auto_assign import AutoAssigner
 from app.services.collaboration_service import CollaborationService
 from app.services.incident_service import IncidentService
-from app.services.priority import FixedPriority
+from app.services.priority import ScoredPriority
 from app.services.sla_service import SlaService
 from app.services.notifications import NotificationService, InAppChannel, SimulatedEmailChannel
 
@@ -33,7 +33,7 @@ class Container:
         self.bus.subscribe(self.notification_service.on_event)
         domains = [d.strip().lower() for d in os.environ.get("ITSM_SSO_DOMAINS", "").split(",") if d.strip()]   # e.g. company.com
         self.auth = AuthService(self.users, sso_domains=domains or None)
-        self.priority = FixedPriority()        # TODO(Pradhyumn): ScoredPriority()
+        self.priority = ScoredPriority()
         self.sla = SlaService(self.sla_policies, self.incidents, self.bus, self.clock, self.violations)
         self.incident_service = IncidentService(self.incidents, self.services, self.categories, self.users, self.bus,
                                                 self.clock, self.priority, self.sla, self.config)

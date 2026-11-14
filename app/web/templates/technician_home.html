@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body %}
+<h4>Technician dashboard</h4>
+<p>Active workload: <b>{{ active_count }}/{{ max_workload }}</b></p>
+{% if incidents %}
+<div class="list-group">
+{% for incident in incidents %}
+<a class="list-group-item list-group-item-action" href="/technician/incidents/{{ incident.id }}">
+  <b>{{ incident.id }} - {{ incident.title }}</b>
+  <span class="float-end">{{ incident.status.value }} | {{ incident.priority.name if incident.priority else '-' }}</span>
+  <div class="small text-muted">{{ incident.category }} | {{ incident.created_at.strftime('%d %b %H:%M') }} UTC</div>
+</a>
+{% endfor %}
+</div>
+{% else %}<p>No assigned incidents.</p>{% endif %}
+{% endblock %}
