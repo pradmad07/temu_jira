@@ -1,6 +1,6 @@
 """SQLite implementations (stdlib sqlite3 - think JDBC). Owner: Kevalin; Gaurav fills in search()."""
 import sqlite3, threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from app.domain.enums import Role, Status, Priority
 from app.domain.exceptions import PersistenceError
@@ -92,7 +92,46 @@ class SqliteIncidentRepository(IncidentRepository):
         active = (Status.ASSIGNED.value, Status.ACKNOWLEDGED.value, Status.IN_PROGRESS.value)
         return self._db.query("SELECT COUNT(*) c FROM incidents WHERE assigned_to=? AND status IN (?,?,?)", (technician_id, *active))[0]["c"]
     def search(self, f, limit=50, offset=0):
-        raise NotImplementedError("TODO(Gaurav): build WHERE from IncidentFilter (>=5 criteria), ORDER BY created_at DESC, LIMIT/OFFSET")
+        clauses, params = [], []
+        if f.incident_id:
+            clauses.append("id = ?"); params.append(f.incident_id)
+        if f.status:
+            clauses.append("status = ?")
+            params.append(f.status.value if hasattr(f.status, "value") else str(f.status))
+        if f.priority:
+            clauses.append("priority = ?")
+            params.append(f.priority.name if hasattr(f.priority, "name") else str(f.priority))
+        if f.category:
+            clauses.append("category = ?")
+            params.append(normalise_category(f.category) if hasattr(f.category, "strip") else str(f.category))
+        if f.service_id:
+            clauses.append("service_id = ?"); params.append(f.service_id)
+        if f.technician_id:
+            clauses.append("assigned_to = ?"); params.append(f.technician_id)
+        if f.date_from:
+            clauses.append("created_at >= ?")
+            params.append(f.date_from.isoformat() if hasattr(f.date_from, "isoformat") else str(f.date_from))
+        if f.date_to:
+            clauses.append("created_at <= ?")
+            params.append(f.date_to.isoformat() if hasattr(f.date_to, "isoformat") else str(f.date_to))
+        if f.text:
+            pattern = f"%{f.text}%"
+            clauses.append("(title LIKE ? OR description LIKE ?)")
+            params.extend([pattern, pattern])
+        if f.sla_status:
+            if f.sla_status == "VIOLATED":
+                clauses.append("id IN (SELECT incident_id FROM sla_violations WHERE kind LIKE '%VIOLATION%')")
+            elif f.sla_status == "AT_RISK":
+                clauses.append("id IN (SELECT incident_id FROM sla_violations WHERE kind LIKE '%WARNING%')")
+            elif f.sla_status == "ON_TRACK":
+                clauses.append("id NOT IN (SELECT incident_id FROM sla_violations)")
+
+        sql = "SELECT * FROM incidents"
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        params.extend([int(limit), int(offset)])
+        return [_incident(r) for r in self._db.query(sql, tuple(params))]
 
 class SqliteAuditRepository(AuditRepository):
     def __init__(self, db: Database): self._db = db
@@ -174,3 +213,18 @@ class SqliteConfigRepository(ConfigRepository):
         rows = self._db.query("SELECT value FROM config WHERE key=?", (key,)); return rows[0]["value"] if rows else default
     def set(self, key, value):
         self._db.execute("INSERT INTO config(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
+
+class SqliteNotificationRepository(NotificationRepository):
+    def __init__(self, db: Database): self._db = db
+    def add(self, recipient_id, channel, subject, body, status="SENT", created_at=None):
+        dt = created_at or datetime.now(timezone.utc)
+        cur = self._db.execute(
+            "INSERT INTO notifications(recipient_id,channel,subject,body,status,created_at,is_read) VALUES(?,?,?,?,?,?,0)",
+            (recipient_id, channel, subject, body, status, dt.isoformat())
+        )
+        return cur.lastrowid
+    def list_for_recipient(self, recipient_id, unread_only=False):
+        sql = "SELECT * FROM notifications WHERE recipient_id=?" + (" AND is_read=0" if unread_only else "") + " ORDER BY id DESC"
+        return [dict(r) for r in self._db.query(sql, (recipient_id,))]
+    def mark_read(self, notification_id):
+        self._db.execute("UPDATE notifications SET is_read=1 WHERE id=?", (notification_id,))

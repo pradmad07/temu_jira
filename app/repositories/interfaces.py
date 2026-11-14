@@ -1,5 +1,6 @@
 """REPOSITORY PATTERN contracts. Services depend on these, never on SQL. Swap the database = write new implementations."""
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Optional
 from app.domain.models import User, Technician, Incident, AuditRecord, Service, SlaPolicy, Comment, Feedback
 from app.domain.enums import Priority
@@ -101,3 +102,11 @@ class ConfigRepository(ABC):
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]: ...
     @abstractmethod
     def set(self, key: str, value: str) -> None: ...
+
+class NotificationRepository(ABC):
+    @abstractmethod
+    def add(self, recipient_id: str, channel: str, subject: str, body: str, status: str = "SENT", created_at: Optional[datetime] = None) -> int: ...
+    @abstractmethod
+    def list_for_recipient(self, recipient_id: str, unread_only: bool = False) -> list[dict]: ...
+    @abstractmethod
+    def mark_read(self, notification_id: int) -> None: ...

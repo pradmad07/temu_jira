@@ -52,9 +52,8 @@ def test_feedback_only_after_resolution_once_and_in_range(c):
     c.collab.submit_feedback(e1, inc.id, 4, "quick")
     with pytest.raises(ValidationError): c.collab.submit_feedback(e1, inc.id, 5)           # only once
 
-def test_search_filters_status_and_category():   # TODO(Gaurav)
-    from tests.conftest import c as make
+def test_search_filters_status_and_category(c):   # TODO(Gaurav)
     from app.domain.filters import IncidentFilter
     from app.domain.enums import Status
-    c = make(); inc = report(c)
+    inc = report(c)
     assert [i.id for i in c.incidents.search(IncidentFilter(status=Status.CLASSIFIED, category="DATABASE"))] == [inc.id]

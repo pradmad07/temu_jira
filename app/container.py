@@ -12,6 +12,7 @@ from app.services.collaboration_service import CollaborationService
 from app.services.incident_service import IncidentService
 from app.services.priority import FixedPriority
 from app.services.sla_service import SlaService
+from app.services.notifications import NotificationService, InAppChannel, SimulatedEmailChannel
 
 class Container:
     def __init__(self, db_path=":memory:", clock=None, auto_assign=True):
@@ -24,7 +25,12 @@ class Container:
         self.comments = SqliteCommentRepository(self.db); self.feedback = SqliteFeedbackRepository(self.db)
         self.config = SqliteConfigRepository(self.db)
         self.bus = EventBus(); self.bus.subscribe(AuditObserver(self.audit).on_event)   # audit first: it must see every event
-        # TODO(Gaurav): self.bus.subscribe(NotificationService([InAppChannel(), SimulatedEmailChannel()]).on_event)
+        self.notifications = SqliteNotificationRepository(self.db)
+        self.notification_service = NotificationService(
+            [InAppChannel(self.notifications), SimulatedEmailChannel(self.notifications)],
+            users=self.users, incidents=self.incidents
+        )
+        self.bus.subscribe(self.notification_service.on_event)
         domains = [d.strip().lower() for d in os.environ.get("ITSM_SSO_DOMAINS", "").split(",") if d.strip()]   # e.g. company.com
         self.auth = AuthService(self.users, sso_domains=domains or None)
         self.priority = FixedPriority()        # TODO(Pradhyumn): ScoredPriority()
