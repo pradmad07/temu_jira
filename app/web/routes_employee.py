@@ -12,9 +12,15 @@ employee = Depends(require_permission(Perm.INCIDENT_VIEW_OWN))
 
 @router.get("/incidents")
 def list_incidents(request: Request, user=Depends(require_permission(Perm.INCIDENT_VIEW_OWN, Perm.INCIDENT_VIEW_ALL))):
+    c = container(request)
+    users_map = {u.id: u for u in c.users.list_all()}
     return templates.TemplateResponse(
         request, "incidents_list.html",
-        {"user": user, "incidents": container(request).incident_service.list_for(user)}
+        {
+            "user": user,
+            "incidents": c.incident_service.list_for(user),
+            "reporters": users_map,
+        }
     )
 
 @router.get("/incidents/new")
@@ -58,6 +64,7 @@ def detail(
     feedback = c.feedback.get(incident_id)
     reporter = c.users.get(incident.reporter_id)
     assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
+    service = c.services.get(incident.service_id)
     return templates.TemplateResponse(
         request, "incident_detail.html",
         {
@@ -65,6 +72,7 @@ def detail(
             "incident": incident,
             "reporter": reporter,
             "assignee": assignee,
+            "service": service,
             "history": history,
             "comments": comments,
             "feedback": feedback,

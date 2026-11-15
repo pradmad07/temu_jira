@@ -13,10 +13,12 @@
     {% endif %}
     {{ incident.status.value }} | {{ incident.priority.name if incident.priority else '-' }}
   </span>
-  <div class="small text-muted">
+  <div class="small text-muted mt-1">
     <span>Category: <strong>{{ incident.category }}</strong></span> | 
+    <span>Service: <strong>{{ incident.service_id }}</strong></span> | 
     <span>Reported by: <strong>{{ reporters[incident.reporter_id].name if reporters and reporters.get(incident.reporter_id) else incident.reporter_id }}</strong></span> | 
-    <span>{{ incident.created_at|ist }}</span>
+    <span>Reported: {{ incident.created_at|ist }}</span>
+    {% if incident.sla %} | <span>Due: <strong>{{ incident.sla.resolution_due|ist }}</strong></span>{% endif %}
   </div>
 </a>
 {% endfor %}

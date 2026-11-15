@@ -108,6 +108,7 @@
                             {% else %}
                             <span class="text-muted small">Unset</span>
                             {% endif %}
+                            <div class="small text-muted">I:{{ inc.impact }} / U:{{ inc.urgency }}</div>
                         </td>
                         <td>
                             {% if inc.status.value in ['NEW', 'CLASSIFIED'] %}
@@ -131,7 +132,12 @@
                             <span class="text-muted small"><em>Unassigned</em></span>
                             {% endif %}
                         </td>
-                        <td class="small text-muted">{{ inc.created_at|ist('%Y-%m-%d %H:%M IST') }}</td>
+                        <td class="small text-muted">
+                            <div>{{ inc.created_at|ist('%Y-%m-%d %H:%M IST') }}</div>
+                            {% if inc.sla %}
+                            <div class="small text-danger">Due: {{ inc.sla.resolution_due|ist('%H:%M IST') }}</div>
+                            {% endif %}
+                        </td>
                         <td class="text-end">
                             <a href="/admin/incidents/{{ inc.id }}" class="btn btn-outline-primary btn-sm">Inspect</a>
                         </td>

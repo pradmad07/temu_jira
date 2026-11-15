@@ -44,6 +44,8 @@ def detail(request: Request, incident_id: str, user=technician):
     workloads = {candidate.id: c.incidents.count_active_by_technician(candidate.id) for candidate in candidates}
     feedback = c.feedback.get(incident_id)
     reporter = c.users.get(incident.reporter_id)
+    assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
+    service = c.services.get(incident.service_id)
     return templates.TemplateResponse(
         request,
         "technician_detail.html",
@@ -51,6 +53,8 @@ def detail(request: Request, incident_id: str, user=technician):
             "user": user,
             "incident": incident,
             "reporter": reporter,
+            "assignee": assignee,
+            "service": service,
             "history": c.audit.list_for_incident(incident_id),
             "comments": c.collab.list_comments(user, incident_id),
             "duplicates": duplicates,

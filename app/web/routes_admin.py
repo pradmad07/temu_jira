@@ -109,6 +109,7 @@ def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
     recommendations = strategy.recommend(incident, technicians, workloads)
     reporter = c.users.get(incident.reporter_id)
     assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
+    service = c.services.get(incident.service_id)
     return templates.TemplateResponse(
         request, "incident_detail.html",
         {
@@ -116,6 +117,7 @@ def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
             "incident": incident,
             "reporter": reporter,
             "assignee": assignee,
+            "service": service,
             "history": history,
             "comments": comments,
             "feedback": feedback,
