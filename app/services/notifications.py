@@ -140,6 +140,10 @@ class NotificationService:
             elif event.type == EV_NOTE_ADDED:
                 if assignee_id:
                     recipients.add(assignee_id)
+
+            elif event.type == EV_FEEDBACK:
+                if assignee_id:
+                    recipients.add(assignee_id)
         else:
             fallback = event.actor_id or event.incident_id or "user"
             recipients.add(fallback)

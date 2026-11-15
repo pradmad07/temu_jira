@@ -7,7 +7,12 @@
 {% for incident in incidents %}
 <a class="list-group-item list-group-item-action" href="/technician/incidents/{{ incident.id }}">
   <b>{{ incident.id }} - {{ incident.title }}</b>
-  <span class="float-end">{{ incident.status.value }} | {{ incident.priority.name if incident.priority else '-' }}</span>
+  <span class="float-end">
+    {% if feedbacks.get(incident.id) %}
+      <span class="badge bg-info text-dark me-2">&#11088; {{ feedbacks[incident.id].rating }}/5</span>
+    {% endif %}
+    {{ incident.status.value }} | {{ incident.priority.name if incident.priority else '-' }}
+  </span>
   <div class="small text-muted">{{ incident.category }} | {{ incident.created_at.strftime('%d %b %H:%M') }} UTC</div>
 </a>
 {% endfor %}

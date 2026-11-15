@@ -150,3 +150,31 @@ def test_user_can_view_and_mark_notifications(client):
     target = [n for n in updated_notes if n["id"] == target_id][0]
     assert target["is_read"] == 1
 
+def test_technician_can_view_feedback(client):
+    c = app.state.container
+    e1 = user(c, "e1@itsm.local")
+    admin = user(c, "admin@itsm.local")
+    t1 = user(c, "t1@itsm.local")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    c.incident_service.assign_incident(admin, inc.id, t1.id)
+    c.incident_service.acknowledge(t1, inc.id)
+    c.incident_service.start_investigation(t1, inc.id)
+    c.incident_service.resolve(t1, inc.id, "Fixed replication lag")
+
+    # Employee submits feedback
+    c.collab.submit_feedback(e1, inc.id, 5, "Amazing technician support!")
+
+    # Technician logs in and checks home dashboard
+    _login(client, email="t1@itsm.local")
+    home_res = client.get("/technician")
+    assert home_res.status_code == 200
+    assert "5/5" in home_res.text
+
+    # Technician views incident detail
+    detail_res = client.get(f"/technician/incidents/{inc.id}")
+    assert detail_res.status_code == 200
+    assert "Reporter Feedback &amp; Service Rating" in detail_res.text or "Reporter Feedback & Service Rating" in detail_res.text
+    assert "5 / 5" in detail_res.text
+    assert "Amazing technician support!" in detail_res.text
+
+

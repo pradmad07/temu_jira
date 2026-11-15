@@ -6,6 +6,22 @@
 <p>Status <b>{{ incident.status.value }}</b> | Priority <b>{{ incident.priority.name if incident.priority else '-' }}</b> | Category {{ incident.category }}</p>
 {% if incident.sla %}<p class="small text-muted">Response due {{ incident.sla.response_due.strftime('%d %b %H:%M') }} UTC | Resolution due {{ incident.sla.resolution_due.strftime('%d %b %H:%M') }} UTC</p>{% endif %}
 
+{% if feedback %}
+<div class="card border-info mb-3">
+  <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
+    <strong>Reporter Feedback & Service Rating</strong>
+    <span class="badge bg-dark fs-6">{{ feedback.rating }} / 5 &#11088;</span>
+  </div>
+  <div class="card-body">
+    {% if feedback.comment %}
+      <p class="mb-0"><em>"{{ feedback.comment }}"</em></p>
+    {% else %}
+      <p class="mb-0 text-muted">The reporter gave a {{ feedback.rating }}/5 rating with no additional comments.</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 <div class="d-flex gap-2 mb-3">
 {% if incident.status.value == 'ASSIGNED' %}
 <form method="post" action="/technician/incidents/{{ incident.id }}/acknowledge"><button class="btn btn-primary">Acknowledge</button></form>

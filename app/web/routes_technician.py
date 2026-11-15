@@ -17,6 +17,7 @@ work = Depends(require_permission(Perm.INCIDENT_WORK))
 def home(request: Request, user=technician):
     c = container(request)
     incidents = c.incident_service.list_for(user)
+    feedbacks = {inc.id: c.feedback.get(inc.id) for inc in incidents}
     return templates.TemplateResponse(
         request,
         "technician_home.html",
@@ -25,6 +26,7 @@ def home(request: Request, user=technician):
             "incidents": incidents,
             "active_count": c.incidents.count_active_by_technician(user.id),
             "max_workload": user.max_workload,
+            "feedbacks": feedbacks,
         },
     )
 
@@ -38,6 +40,7 @@ def detail(request: Request, incident_id: str, user=technician):
     strategy = strategy_by_name(c.config.get("assignment_strategy", "skill"))
     candidates = c.users.list_technicians()
     workloads = {candidate.id: c.incidents.count_active_by_technician(candidate.id) for candidate in candidates}
+    feedback = c.feedback.get(incident_id)
     return templates.TemplateResponse(
         request,
         "technician_detail.html",
@@ -48,6 +51,7 @@ def detail(request: Request, incident_id: str, user=technician):
             "comments": c.collab.list_comments(user, incident_id),
             "duplicates": duplicates,
             "recommendations": strategy.recommend(incident, candidates, workloads),
+            "feedback": feedback,
         },
     )
 
