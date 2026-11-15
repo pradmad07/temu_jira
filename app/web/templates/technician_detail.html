@@ -31,22 +31,87 @@
 </div>
 
 {% if incident.status.value in ('ACKNOWLEDGED', 'IN_PROGRESS') %}
-<form method="post" action="/technician/incidents/{{ incident.id }}/note" class="mb-3">
-  <label class="form-label">Internal note</label><textarea class="form-control" name="text" required></textarea>
-  <button class="btn btn-outline-secondary mt-2">Add note</button>
-</form>
-<form method="post" action="/technician/incidents/{{ incident.id }}/request-info" class="mb-3">
-  <label class="form-label">Request information</label><textarea class="form-control" name="question" required></textarea>
-  <button class="btn btn-outline-secondary mt-2">Request info</button>
-</form>
-<form method="post" action="/technician/incidents/{{ incident.id }}/resolve">
-  <label class="form-label">Resolution</label><textarea class="form-control" name="resolution" required></textarea>
-  <button class="btn btn-success mt-2">Resolve</button>
-</form>
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <strong>🔒 Add Internal Work Note</strong>
+      </div>
+      <div class="card-body">
+        <p class="small text-muted mb-2">Private technical documentation visible only to technicians and admins (hidden from the reporter).</p>
+        <form method="post" action="/technician/incidents/{{ incident.id }}/note">
+          <textarea class="form-control mb-2" name="text" rows="3" placeholder="Server logs, debugging steps, IP addresses, or diagnostic hypothesis..." required></textarea>
+          <button class="btn btn-outline-secondary btn-sm">Post Internal Note</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <strong>❓ Request Information from Reporter</strong>
+      </div>
+      <div class="card-body">
+        <p class="small text-muted mb-2">Asks the employee a question. This will be visible to the reporter and notify them.</p>
+        <form method="post" action="/technician/incidents/{{ incident.id }}/request-info">
+          <textarea class="form-control mb-2" name="question" rows="3" placeholder="What extra details or reproduction steps do you need from the employee?" required></textarea>
+          <button class="btn btn-outline-primary btn-sm">Send Question to Reporter</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4 border-success">
+  <div class="card-header bg-success text-white">
+    <strong>Resolve Incident</strong>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/technician/incidents/{{ incident.id }}/resolve">
+      <label class="form-label small fw-bold">Permanent Resolution Summary</label>
+      <textarea class="form-control mb-2" name="resolution" rows="2" placeholder="Describe the fix applied and steps taken to restore service..." required></textarea>
+      <button class="btn btn-success btn-sm">Resolve Incident</button>
+    </form>
+  </div>
+</div>
 {% endif %}
 
-<h6 class="mt-4">Comments and notes</h6>
-<ul>{% for comment in comments %}<li>{{ comment.kind }}: {{ comment.body }}</li>{% else %}<li>No comments yet.</li>{% endfor %}</ul>
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Activity & Comments Stream</h5>
+    <span class="badge bg-secondary">{{ comments|length }} entries</span>
+  </div>
+  <div class="card-body">
+    {% if comments %}
+      <div class="list-group mb-0">
+        {% for comment in comments %}
+          <div class="list-group-item {% if comment.kind == 'NOTE' %}list-group-item-secondary{% elif comment.kind == 'REQUEST' %}list-group-item-warning{% else %}list-group-item-light{% endif %} mb-2 rounded border">
+            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+              <div>
+                {% if comment.kind == 'NOTE' %}
+                  <span class="badge bg-dark me-2">&#128274; Internal Note</span>
+                  <small class="text-muted fst-italic">(Visible only to technicians and admins, hidden from reporter)</small>
+                {% elif comment.kind == 'REQUEST' %}
+                  <span class="badge bg-warning text-dark me-2">&#10067; Question to Reporter</span>
+                {% elif comment.kind == 'REPLY' %}
+                  <span class="badge bg-info text-dark me-2">&#128172; Reporter Response</span>
+                {% else %}
+                  <span class="badge bg-secondary me-2">{{ comment.kind }}</span>
+                {% endif %}
+              </div>
+              <small class="text-muted">{{ comment.created_at.strftime('%d %b %H:%M') }} UTC</small>
+            </div>
+            <p class="mb-0 small text-dark" style="white-space: pre-wrap;">{{ comment.body }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted small mb-0">No notes or comments yet.</p>
+    {% endif %}
+  </div>
+</div>
+
 <h6>Possible duplicates</h6>
 <ul>{% for duplicate, score in duplicates %}<li>{{ duplicate.id }} - {{ duplicate.title }} ({{ "%.2f"|format(score) }})</li>{% else %}<li>No similar incidents found.</li>{% endfor %}</ul>
 {% if user.can('incident.assign') and recommendations %}

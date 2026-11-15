@@ -140,6 +140,8 @@
                       &#9888;&#65039; Technician Question
                     {% elif c.kind == 'REPLY' %}
                       &#128172; Reporter Reply
+                    {% elif c.kind == 'NOTE' %}
+                      &#128274; Internal Work Note (IT Staff Only)
                     {% else %}
                       {{ c.kind }}
                     {% endif %}

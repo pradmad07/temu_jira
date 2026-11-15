@@ -182,4 +182,40 @@ def test_technician_can_view_feedback(client):
     assert "Amazing technician support!" in detail_res.text
     assert "Technician recommendations" not in detail_res.text
 
+def test_internal_note_visibility_rules(client):
+    c = app.state.container
+    admin = user(c, "admin@itsm.local")
+    t1 = user(c, "t1@itsm.local")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    c.incident_service.assign_incident(admin, inc.id, t1.id)
+    c.incident_service.acknowledge(t1, inc.id)
+    c.incident_service.start_investigation(t1, inc.id)
+
+    # Technician adds an internal note
+    _login(client, email="t1@itsm.local")
+    note_res = client.post(
+        f"/technician/incidents/{inc.id}/note",
+        data={"text": "Diagnostic secret: database password reset needed on host 10.0.0.1"}
+    )
+    assert note_res.status_code == 303
+
+    # Technician CAN see their internal note
+    tech_view = client.get(f"/technician/incidents/{inc.id}")
+    assert tech_view.status_code == 200
+    assert "Diagnostic secret: database password reset needed on host 10.0.0.1" in tech_view.text
+    assert "Internal Note" in tech_view.text
+
+    # Admin CAN see the internal note
+    _login(client, email="admin@itsm.local")
+    admin_view = client.get(f"/admin/incidents/{inc.id}")
+    assert admin_view.status_code == 200
+    assert "Diagnostic secret: database password reset needed on host 10.0.0.1" in admin_view.text
+
+    # Reporter (Employee) CANNOT see the internal note
+    _login(client, email="e1@itsm.local")
+    emp_view = client.get(f"/employee/incidents/{inc.id}")
+    assert emp_view.status_code == 200
+    assert "Diagnostic secret: database password reset needed on host 10.0.0.1" not in emp_view.text
+
+
 
