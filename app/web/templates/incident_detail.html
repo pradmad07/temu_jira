@@ -1,6 +1,173 @@
-{% extends "base.html" %}{% block body %}<h4>{{ incident.id }} - {{ incident.title }}</h4>
-<p>{{ incident.description }}</p><p>Status <b>{{ incident.status.value }}</b> | Priority <b>{{ incident.priority.name if incident.priority else '-' }}</b> | Category {{ incident.category }}</p>
-{% if incident.sla %}<p class="small text-muted">Response due {{ incident.sla.response_due.strftime('%d %b %H:%M') }} UTC | Resolution due {{ incident.sla.resolution_due.strftime('%d %b %H:%M') }} UTC</p>{% endif %}
-{% if incident.resolution %}<div class="alert alert-success">Resolution: {{ incident.resolution }}</div>{% endif %}
-<h6>History</h6><ul>{% for h in history %}<li>{{ h.timestamp.strftime('%H:%M:%S') }} - {{ h.description }}</li>{% endfor %}</ul>
-<!-- TODO(Kevalin): reply form, verify/reject buttons, feedback form -->{% endblock %}
+{% extends "base.html" %}
+{% block body %}
+<div class="mb-3">
+  <a href="/employee/incidents" class="btn btn-sm btn-outline-secondary">&larr; Back to My Incidents</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div>
+      <span class="badge bg-secondary me-2">{{ incident.id }}</span>
+      <span class="badge bg-info text-dark me-2">{{ incident.category }}</span>
+      <span class="badge {% if incident.priority and incident.priority.name == 'P1' %}bg-danger{% elif incident.priority and incident.priority.name == 'P2' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+        {{ incident.priority.name if incident.priority else 'Unclassified' }}
+      </span>
+    </div>
+    <span class="badge {% if incident.status.value in ('RESOLVED', 'VERIFIED') %}bg-success{% elif incident.status.value == 'CLOSED' %}bg-dark{% else %}bg-warning text-dark{% endif %} fs-6">
+      {{ incident.status.value }}
+    </span>
+  </div>
+  <div class="card-body">
+    <h4 class="card-title">{{ incident.title }}</h4>
+    <p class="card-text text-secondary mb-3" style="white-space: pre-wrap;">{{ incident.description }}</p>
+    
+    <div class="row g-2 small text-muted border-top pt-2">
+      <div class="col-sm-4"><strong>Service:</strong> {{ incident.service_id }}</div>
+      <div class="col-sm-4"><strong>Impact / Urgency:</strong> {{ incident.impact }} / {{ incident.urgency }}</div>
+      <div class="col-sm-4"><strong>Users Affected:</strong> {{ incident.affected_users }}</div>
+    </div>
+    {% if incident.sla %}
+    <div class="small text-muted mt-2">
+      <span>Response due: <strong>{{ incident.sla.response_due.strftime('%d %b %H:%M') }} UTC</strong></span> | 
+      <span>Resolution due: <strong>{{ incident.sla.resolution_due.strftime('%d %b %H:%M') }} UTC</strong></span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if incident.resolution %}
+<div class="card border-success mb-4">
+  <div class="card-header bg-success text-white">
+    <strong>Resolution Details</strong>
+  </div>
+  <div class="card-body">
+    <p class="card-text mb-0">{{ incident.resolution }}</p>
+  </div>
+</div>
+{% endif %}
+
+{% if incident.reporter_id == user.id and incident.status.value == 'RESOLVED' %}
+<div class="card border-primary mb-4">
+  <div class="card-header bg-primary text-white">
+    <strong>Verify Resolution</strong>
+  </div>
+  <div class="card-body">
+    <p>The technician has resolved this incident. Please confirm if the problem is completely fixed or if it still persists.</p>
+    <div class="d-flex gap-3">
+      <form method="post" action="/employee/incidents/{{ incident.id }}/verify">
+        <button class="btn btn-success">Confirm Fix (Verify)</button>
+      </form>
+      <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#rejectForm">
+        Report Still Broken (Reject Fix)
+      </button>
+    </div>
+    <div class="collapse mt-3" id="rejectForm">
+      <form method="post" action="/employee/incidents/{{ incident.id }}/reject" class="p-3 bg-light rounded border">
+        <label class="form-label fw-bold">Reason / What is still broken?</label>
+        <textarea class="form-control mb-2" name="reason" rows="2" placeholder="Explain what is still not working..." required></textarea>
+        <button class="btn btn-danger btn-sm">Submit Rejection & Reopen Investigation</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-7">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Communication & Questions</h5>
+      </div>
+      <div class="card-body">
+        {% if comments %}
+          <div class="list-group mb-3">
+            {% for c in comments %}
+              <div class="list-group-item {% if c.kind == 'REQUEST' %}list-group-item-warning{% elif c.kind == 'REPLY' %}list-group-item-light{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">
+                    {% if c.kind == 'REQUEST' %}
+                      &#9888;&#65039; Technician Question
+                    {% elif c.kind == 'REPLY' %}
+                      &#128172; Reporter Reply
+                    {% else %}
+                      {{ c.kind }}
+                    {% endif %}
+                  </h6>
+                  <small class="text-muted">{{ c.created_at.strftime('%d %b %H:%M') }}</small>
+                </div>
+                <p class="mb-1" style="white-space: pre-wrap;">{{ c.body }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted small">No comments or requests yet.</p>
+        {% endif %}
+
+        {% if incident.reporter_id == user.id and incident.status.value != 'CLOSED' %}
+          <form method="post" action="/employee/incidents/{{ incident.id }}/reply" class="mt-3">
+            <label class="form-label fw-bold">Reply to Technician / Provide More Info</label>
+            <textarea class="form-control mb-2" name="answer" rows="3" placeholder="Type your answer or provide additional context here..." required></textarea>
+            <button class="btn btn-primary btn-sm">Send Information</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if incident.reporter_id == user.id and incident.status.value in ('RESOLVED', 'VERIFIED', 'CLOSED') %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Service Quality Feedback</h5>
+      </div>
+      <div class="card-body">
+        {% if feedback %}
+          <div class="alert alert-info mb-0">
+            <strong>Your Rating:</strong> {{ feedback.rating }} / 5 &#11088;
+            {% if feedback.comment %}
+              <p class="mb-0 mt-1"><em>"{{ feedback.comment }}"</em></p>
+            {% endif %}
+          </div>
+        {% else %}
+          <form method="post" action="/employee/incidents/{{ incident.id }}/feedback">
+            <div class="mb-2">
+              <label class="form-label fw-bold">Rating (1 = Poor, 5 = Excellent)</label>
+              <select class="form-select" name="rating" required>
+                <option value="5" selected>5 - Excellent</option>
+                <option value="4">4 - Good</option>
+                <option value="3">3 - Satisfactory</option>
+                <option value="2">2 - Needs Improvement</option>
+                <option value="1">1 - Poor</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Comments (optional)</label>
+              <textarea class="form-control" name="comment" rows="2" placeholder="How satisfied were you with the resolution?"></textarea>
+            </div>
+            <button class="btn btn-outline-primary btn-sm">Submit Feedback</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-5">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Audit History</h5>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0 small">
+          {% for h in history %}
+            <li class="mb-2 border-bottom pb-1">
+              <span class="text-muted">{{ h.timestamp.strftime('%H:%M:%S') }}</span> - 
+              <span>{{ h.description }}</span>
+            </li>
+          {% else %}
+            <li class="text-muted">No history recorded.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

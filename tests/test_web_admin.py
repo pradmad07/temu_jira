@@ -2,9 +2,14 @@ import pytest
 from starlette.testclient import TestClient
 from app.main import app
 
+from app.container import build_container
+from app.seed import seed
+from tests.helpers import FakeClock
+
 @pytest.fixture
 def client():
-    # Use follow_redirects=False to verify redirection and permission headers
+    app.state.container = build_container(":memory:", clock=FakeClock(), auto_assign=False)
+    seed(app.state.container)
     return TestClient(app, follow_redirects=False)
 
 def _login(client, email="admin@itsm.local", password="password123"):
