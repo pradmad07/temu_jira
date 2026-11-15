@@ -134,8 +134,14 @@
                         </td>
                         <td class="small text-muted">
                             <div>{{ inc.created_at|ist('%Y-%m-%d %H:%M IST') }}</div>
-                            {% if inc.sla %}
-                            <div class="small text-danger">Due: {{ inc.sla.resolution_due|ist('%H:%M IST') }}</div>
+                            {% if inc.status.value in ['RESOLVED', 'VERIFIED', 'CLOSED'] %}
+                                {% if inc.resolved_at %}
+                                <div class="small text-success">Resolved: {{ inc.resolved_at|ist('%H:%M IST') }}</div>
+                                {% else %}
+                                <div class="small text-success">&#10004; Completed</div>
+                                {% endif %}
+                            {% elif inc.sla %}
+                                <div class="small text-danger">Due: {{ inc.sla.resolution_due|ist('%H:%M IST') }}</div>
                             {% endif %}
                         </td>
                         <td class="text-end">

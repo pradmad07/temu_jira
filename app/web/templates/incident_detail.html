@@ -63,11 +63,20 @@
         <span class="text-dark">{{ incident.affected_users }}</span>
       </div>
       <div class="col-md-6 col-sm-12">
-        <strong class="text-muted text-uppercase d-block mb-1">SLA Deadlines</strong>
-        {% if incident.sla %}
+        <strong class="text-muted text-uppercase d-block mb-1">SLA Status & Deadlines</strong>
+        {% if incident.status.value in ('RESOLVED', 'VERIFIED', 'CLOSED') %}
+          {% if incident.resolved_at and incident.sla and incident.resolved_at <= incident.sla.resolution_due %}
+            <span class="badge bg-success">Met SLA Target</span>
+          {% elif incident.resolved_at and incident.sla %}
+            <span class="badge bg-danger">Resolved After Target</span>
+          {% else %}
+            <span class="badge bg-success">Resolved</span>
+          {% endif %}
+          <span class="ms-1 small text-muted">(Resolved: <strong>{{ incident.resolved_at|ist if incident.resolved_at else 'Complete' }}</strong>{% if incident.sla %} | Target was: {{ incident.sla.resolution_due|ist }}{% endif %})</span>
+        {% elif incident.sla %}
           <span>Response Due: <strong>{{ incident.sla.response_due|ist }}</strong></span>
           <span class="mx-1">|</span>
-          <span>Resolution Due: <strong>{{ incident.sla.resolution_due|ist }}</strong></span>
+          <span class="text-danger">Resolution Due: <strong>{{ incident.sla.resolution_due|ist }}</strong></span>
         {% else %}
           <span class="text-muted">No SLA calculated</span>
         {% endif %}
