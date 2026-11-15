@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>System Audit Trail Log</h2>
+    <span class="badge bg-secondary">Immutable Log Records</span>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Event History (Chronological)</h5>
+        <span class="small text-light">Showing up to latest 200 records</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 180px;">Timestamp</th>
+                        <th>Actor</th>
+                        <th>Target Incident</th>
+                        <th>Action</th>
+                        <th>Transition</th>
+                        <th>Audit Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr>
+                        <td class="small text-muted">{{ rec.timestamp.strftime('%Y-%m-%d %H:%M:%S') if rec.timestamp else '-' }}</td>
+                        <td><code>{{ rec.actor_id or 'System' }}</code></td>
+                        <td>
+                            {% if rec.incident_id %}
+                            <code><a href="/employee/incidents/{{ rec.incident_id }}">{{ rec.incident_id }}</a></code>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border">Global Config</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if 'CREATED' in rec.action or 'RESOLVED' in rec.action %}
+                            <span class="badge bg-success">{{ rec.action }}</span>
+                            {% elif 'VIOLATED' in rec.action or 'ESCALATED' in rec.action %}
+                            <span class="badge bg-danger">{{ rec.action }}</span>
+                            {% elif 'WARNING' in rec.action %}
+                            <span class="badge bg-warning text-dark">{{ rec.action }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ rec.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {% if rec.old_status or rec.new_status %}
+                            <code>{{ rec.old_status or '-' }}</code> &rarr; <code>{{ rec.new_status or '-' }}</code>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">{{ rec.description }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No audit records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

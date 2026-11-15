@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block body %}
+<h2 class="mb-4">Services, SLA Policies & Categories</h2>
+
+<div class="row g-4 mb-4">
+    <!-- Services Section -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Business Services</h5>
+            </div>
+            <div class="card-body">
+                <!-- Add Service Form -->
+                <form method="post" action="/admin/services/new" class="row g-2 mb-4 p-3 bg-light rounded border">
+                    <div class="col-sm-7">
+                        <label class="form-label small fw-bold">Service Name</label>
+                        <input type="text" name="name" class="form-control form-control-sm" required placeholder="e.g. ERP System">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label small fw-bold">Criticality (1-5)</label>
+                        <input type="number" name="criticality" class="form-control form-control-sm" min="1" max="5" value="3" required>
+                    </div>
+                    <div class="col-sm-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">+ Add</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Criticality</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in services %}
+                            <tr>
+                                <td><code>{{ s.id }}</code></td>
+                                <td class="fw-medium">{{ s.name }}</td>
+                                <td>
+                                    {% if s.criticality >= 4 %}
+                                    <span class="badge bg-danger">{{ s.criticality }} / 5 (Critical)</span>
+                                    {% elif s.criticality == 3 %}
+                                    <span class="badge bg-warning text-dark">{{ s.criticality }} / 5 (Medium)</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ s.criticality }} / 5 (Low)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Incident Categories</h5>
+            </div>
+            <div class="card-body">
+                <!-- Add Category Form -->
+                <form method="post" action="/admin/categories/new" class="row g-2 mb-4 p-3 bg-light rounded border">
+                    <div class="col-sm-9">
+                        <label class="form-label small fw-bold">New Category</label>
+                        <input type="text" name="name" class="form-control form-control-sm" required placeholder="e.g. DEVOPS">
+                    </div>
+                    <div class="col-sm-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">+ Add</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category Name</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cat in categories %}
+                            <tr>
+                                <td><span class="badge bg-secondary-subtle text-dark border px-2 py-1">{{ cat }}</span></td>
+                                <td class="text-end">
+                                    <form method="post" action="/admin/categories/{{ cat }}/disable" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Disable category {{ cat }}?')">Disable</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SLA Policies Section -->
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="card-title mb-0">SLA Policy Configuration Matrix</h5>
+    </div>
+    <div class="card-body">
+        <!-- Configure SLA Policy Form -->
+        <form method="post" action="/admin/sla-policies" class="row g-2 mb-4 p-3 bg-light rounded border">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Priority</label>
+                <select name="priority" class="form-select form-select-sm" required>
+                    <option value="P1">P1 - Critical</option>
+                    <option value="P2">P2 - High</option>
+                    <option value="P3">P3 - Medium</option>
+                    <option value="P4">P4 - Low</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Applies To Service</label>
+                <select name="service_id" class="form-select form-select-sm" required>
+                    <option value="*">* (Global Default for all services)</option>
+                    {% for s in services %}
+                    <option value="{{ s.id }}">{{ s.name }} ({{ s.id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Response (min)</label>
+                <input type="number" name="response_minutes" class="form-control form-control-sm" min="1" required placeholder="Minutes">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Resolution (min)</label>
+                <input type="number" name="resolution_minutes" class="form-control form-control-sm" min="1" required placeholder="Minutes">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success btn-sm w-100">Set Policy</button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Priority</th>
+                        <th>Scope (Service)</th>
+                        <th>Response Deadline</th>
+                        <th>Resolution Deadline</th>
+                        <th>75% Warning Point</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in sla_policies %}
+                    <tr>
+                        <td>
+                            {% if p.priority.name == 'P1' %}
+                            <span class="badge bg-danger">P1</span>
+                            {% elif p.priority.name == 'P2' %}
+                            <span class="badge bg-warning text-dark">P2</span>
+                            {% elif p.priority.name == 'P3' %}
+                            <span class="badge bg-info text-dark">P3</span>
+                            {% else %}
+                            <span class="badge bg-secondary">P4</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.service_id == '*' %}
+                            <span class="badge bg-primary">Global Default (*)</span>
+                            {% else %}
+                            <code>{{ p.service_id }}</code>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ p.response_minutes }}</strong> minutes</td>
+                        <td><strong>{{ p.resolution_minutes }}</strong> minutes</td>
+                        <td class="text-muted small">
+                            Response: ~{{ (p.response_minutes * 0.75)|round|int }}m | Resolution: ~{{ (p.resolution_minutes * 0.75)|round|int }}m
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

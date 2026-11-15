@@ -3,5 +3,6 @@
 <nav class="navbar navbar-dark bg-dark px-3"><span class="navbar-brand">I-ITSM</span>
 {% if user %}<div class="text-white small">{{ user.name }} ({{ user.role.value }})
  {% if user.can('incident.create') %}<a class="text-white ms-3" href="/employee/incidents">My incidents</a><a class="text-white ms-3" href="/employee/incidents/new">Report incident</a>{% endif %}
+ {% if user.can('incident.view_all') %}<a class="text-white ms-3" href="/admin">Admin Dashboard</a><a class="text-white ms-3" href="/admin/incidents">All Incidents</a><a class="text-white ms-3" href="/admin/users">Users</a><a class="text-white ms-3" href="/admin/services">Services & SLA</a><a class="text-white ms-3" href="/admin/audit">Audit Log</a>{% endif %}
  <a class="text-white ms-3" href="/logout">Log out</a></div>{% endif %}</nav>
-<main class="container py-4">{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}{% block body %}{% endblock %}</main></body></html>
+<main class="container py-4">{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}{% if request.query_params.get('msg') %}<div class="alert alert-success alert-dismissible fade show" role="alert">{{ request.query_params.get('msg') }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endif %}{% block body %}{% endblock %}</main></body></html>

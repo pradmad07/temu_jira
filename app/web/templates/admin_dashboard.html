@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>ITSM Executive Dashboard</h2>
+    <form method="post" action="/admin/sla/scan" class="d-inline">
+        <button type="submit" class="btn btn-warning shadow-sm">
+            <span class="fw-bold">⏱️ Run SLA Scan Now</span>
+        </button>
+    </form>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2 col-sm-4 col-6">
+        <div class="card text-center border-primary shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2">Total Incidents</h6>
+                <h2 class="text-primary fw-bold mb-0">{{ overview.total }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-4 col-6">
+        <div class="card text-center border-info shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2">Open / Active</h6>
+                <h2 class="text-info fw-bold mb-0">{{ overview.open }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-4 col-6">
+        <div class="card text-center border-danger shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2">Critical (P1)</h6>
+                <h2 class="text-danger fw-bold mb-0">{{ overview.critical }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-sm-6 col-6">
+        <div class="card text-center border-success shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2">Resolved</h6>
+                <h2 class="text-success fw-bold mb-0">{{ overview.resolved }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 col-12">
+        <div class="card text-center border-warning shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase mb-2">SLA Breaches</h6>
+                <h2 class="text-warning fw-bold mb-0">{{ overview.sla_violations }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Configuration -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="card-title mb-1">Assignment Engine Strategy</h5>
+            <p class="text-muted mb-0 small">Currently active: <strong>{{ strategy|upper }}</strong> based assignment</p>
+        </div>
+        <form method="post" action="/admin/strategy" class="d-flex align-items-center gap-2">
+            <select name="strategy" class="form-select form-select-sm">
+                <option value="skill" {% if strategy == 'skill' %}selected{% endif %}>Skill-Based (Match Category)</option>
+                <option value="load" {% if strategy == 'load' %}selected{% endif %}>Load-Based (Least Workload)</option>
+            </select>
+            <button type="submit" class="btn btn-outline-primary btn-sm">Save Strategy</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Technician Workload -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Technician Active Workload</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Technician</th>
+                                <th class="text-center">Active Incidents</th>
+                                <th class="text-center">Max Capacity</th>
+                                <th>Load Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tech in workload %}
+                            <tr>
+                                <td class="fw-medium">{{ tech.name }}</td>
+                                <td class="text-center">{{ tech.active_count }}</td>
+                                <td class="text-center">{{ tech.max_workload }}</td>
+                                <td>
+                                    {% if tech.active_count >= tech.max_workload %}
+                                    <span class="badge bg-danger">At Capacity</span>
+                                    {% elif tech.active_count > 0 %}
+                                    <span class="badge bg-primary">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">No technicians registered.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incidents Per Service -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Incident Distribution by Service</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Service Name</th>
+                                <th class="text-center">Total Incidents</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for svc in service_counts %}
+                            <tr>
+                                <td class="fw-medium">{{ svc.service_name }}</td>
+                                <td class="text-center"><span class="badge bg-secondary rounded-pill px-3">{{ svc.count }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="2" class="text-center text-muted py-3">No service data available.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent System Audit Activity -->
+<div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Recent Audit Trail Activity</h5>
+        <a href="/admin/audit" class="btn btn-sm btn-link">View Full Audit Log &rarr;</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Actor</th>
+                        <th>Incident</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in recent_audit %}
+                    <tr>
+                        <td class="small text-muted">{{ rec.timestamp.strftime('%Y-%m-%d %H:%M') if rec.timestamp else '-' }}</td>
+                        <td><code>{{ rec.actor_id or 'System' }}</code></td>
+                        <td>
+                            {% if rec.incident_id %}
+                            <a href="/employee/incidents/{{ rec.incident_id }}">{{ rec.incident_id }}</a>
+                            {% else %}
+                            <span class="text-muted">Global</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-dark">{{ rec.action }}</span></td>
+                        <td class="small">{{ rec.description }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">No recent audit records.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

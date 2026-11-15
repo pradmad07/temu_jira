@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>User & Technician Management</h2>
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#createUserForm">
+        + Create New User
+    </button>
+</div>
+
+<!-- Create User Form (Collapsible) -->
+<div class="collapse mb-4" id="createUserForm">
+    <div class="card shadow-sm border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Create New System User</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="/admin/users/new" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Full Name</label>
+                    <input type="text" name="name" class="form-control" required placeholder="e.g. Jane Doe">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Email Address</label>
+                    <input type="email" name="email" class="form-control" required placeholder="user@itsm.local">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Password</label>
+                    <input type="password" name="password" class="form-control" required minlength="8" placeholder="Min 8 characters">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Role</label>
+                    <select name="role" class="form-select" id="roleSelect" required>
+                        <option value="EMPLOYEE">Employee</option>
+                        <option value="TECHNICIAN">Technician</option>
+                        <option value="TEAM_LEAD">Team Lead</option>
+                        <option value="IT_MANAGER">IT Manager</option>
+                        <option value="ADMIN">Administrator</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Reports To (Manager)</label>
+                    <select name="reports_to" class="form-select">
+                        <option value="">None (Top Level)</option>
+                        {% for mgr in managers %}
+                        <option value="{{ mgr.id }}">{{ mgr.name }} ({{ mgr.role.value }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Skills (Technicians Only)</label>
+                    <input type="text" name="skills" class="form-control" placeholder="DATABASE, APPLICATION, NETWORK">
+                    <div class="form-text">Comma-separated category names.</div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Max Load</label>
+                    <input type="number" name="max_workload" class="form-control" value="5" min="1" max="20">
+                </div>
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-success">Save & Register User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Users List Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name & Email</th>
+                        <th>Role</th>
+                        <th>Reports To</th>
+                        <th>Attributes & Skills</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td><code>{{ u.id }}</code></td>
+                        <td>
+                            <div class="fw-bold">{{ u.name }}</div>
+                            <div class="small text-muted">{{ u.email }}</div>
+                        </td>
+                        <td>
+                            {% if u.role.value == 'ADMIN' %}
+                            <span class="badge bg-danger">ADMIN</span>
+                            {% elif u.role.value == 'IT_MANAGER' %}
+                            <span class="badge bg-warning text-dark">IT MANAGER</span>
+                            {% elif u.role.value == 'TEAM_LEAD' %}
+                            <span class="badge bg-primary">TEAM LEAD</span>
+                            {% elif u.role.value == 'TECHNICIAN' %}
+                            <span class="badge bg-info text-dark">TECHNICIAN</span>
+                            {% else %}
+                            <span class="badge bg-secondary">EMPLOYEE</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.reports_to %}
+                            <code>{{ u.reports_to }}</code>
+                            {% else %}
+                            <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.role.value == 'TECHNICIAN' %}
+                            <div class="small">
+                                <strong>Skills:</strong>
+                                {% for s in u.skills %}
+                                <span class="badge bg-light text-dark border">{{ s }}</span>
+                                {% else %}
+                                <span class="text-muted">None</span>
+                                {% endfor %}
+                            </div>
+                            <div class="small text-muted">Max load: {{ u.max_workload }} | Exp: {{ u.experience_years }} yrs</div>
+                            {% else %}
+                            <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Disabled</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if u.id != user.id %}
+                            <form method="post" action="/admin/users/{{ u.id }}/toggle-active" class="d-inline">
+                                <input type="hidden" name="active" value="{{ 0 if u.active else 1 }}">
+                                {% if u.active %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Deactivate account for {{ u.name }}?')">Deactivate</button>
+                                {% else %}
+                                <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
+                                {% endif %}
+                            </form>
+                            {% else %}
+                            <span class="badge bg-light text-muted border">Self</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Incident Operations Center</h2>
+    <div>
+        <a href="/employee/incidents/new" class="btn btn-primary">+ Report New Incident</a>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body bg-light">
+        <form method="get" action="/admin/incidents" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Search Text</label>
+                <input type="text" name="text" class="form-control form-control-sm" placeholder="Title or description..." value="{{ filters.text or '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for st in statuses %}
+                    <option value="{{ st.value }}" {% if filters.status == st.value %}selected{% endif %}>{{ st.value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Priority</label>
+                <select name="priority" class="form-select form-select-sm">
+                    <option value="">All Priorities</option>
+                    {% for pr in priorities %}
+                    <option value="{{ pr.name }}" {% if filters.priority == pr.name %}selected{% endif %}>{{ pr.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Service</label>
+                <select name="service_id" class="form-select form-select-sm">
+                    <option value="">All Services</option>
+                    {% for svc in services %}
+                    <option value="{{ svc.id }}" {% if filters.service_id == svc.id %}selected{% endif %}>{{ svc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                <a href="/admin/incidents" class="btn btn-outline-secondary btn-sm" title="Clear Filters">✕</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Incident Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Title & Category</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Service</th>
+                        <th>Assignee</th>
+                        <th>Created</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inc in incidents %}
+                    <tr>
+                        <td><code><a href="/employee/incidents/{{ inc.id }}" class="fw-bold">{{ inc.id }}</a></code></td>
+                        <td>
+                            <div class="fw-medium">{{ inc.title }}</div>
+                            <div class="badge bg-secondary-subtle text-secondary small">{{ inc.category }}</div>
+                        </td>
+                        <td>
+                            {% if inc.priority %}
+                                {% if inc.priority.name == 'P1' %}
+                                <span class="badge bg-danger">P1 - Critical</span>
+                                {% elif inc.priority.name == 'P2' %}
+                                <span class="badge bg-warning text-dark">P2 - High</span>
+                                {% elif inc.priority.name == 'P3' %}
+                                <span class="badge bg-info text-dark">P3 - Medium</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark border">P4 - Low</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted small">Unset</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if inc.status.value in ['NEW', 'CLASSIFIED'] %}
+                            <span class="badge bg-secondary">{{ inc.status.value }}</span>
+                            {% elif inc.status.value in ['ASSIGNED', 'ACKNOWLEDGED'] %}
+                            <span class="badge bg-primary">{{ inc.status.value }}</span>
+                            {% elif inc.status.value == 'IN_PROGRESS' %}
+                            <span class="badge bg-info text-dark">{{ inc.status.value }}</span>
+                            {% elif inc.status.value in ['RESOLVED', 'VERIFIED'] %}
+                            <span class="badge bg-success">{{ inc.status.value }}</span>
+                            {% else %}
+                            <span class="badge bg-dark">{{ inc.status.value }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">{{ inc.service_id }}</td>
+                        <td>
+                            {% if inc.assigned_to %}
+                            <span class="small badge bg-light text-dark border">{{ inc.assigned_to }}</span>
+                            {% else %}
+                            <span class="text-muted small"><em>Unassigned</em></span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ inc.created_at.strftime('%Y-%m-%d %H:%M') if inc.created_at else '-' }}</td>
+                        <td class="text-end">
+                            <a href="/employee/incidents/{{ inc.id }}" class="btn btn-outline-primary btn-sm">Inspect</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No incidents matched your query criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
