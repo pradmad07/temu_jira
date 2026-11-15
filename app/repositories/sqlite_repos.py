@@ -228,3 +228,5 @@ class SqliteNotificationRepository(NotificationRepository):
         return [dict(r) for r in self._db.query(sql, (recipient_id,))]
     def mark_read(self, notification_id):
         self._db.execute("UPDATE notifications SET is_read=1 WHERE id=?", (notification_id,))
+    def mark_all_read(self, recipient_id):
+        self._db.execute("UPDATE notifications SET is_read=1 WHERE recipient_id=?", (recipient_id,))

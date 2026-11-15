@@ -225,6 +225,61 @@ def test_timestamps_rendered_in_ist(client):
     assert res.status_code == 200
     assert "IST" in res.text
 
+def test_reassignment_notifies_initial_technician(client):
+    c = app.state.container
+    admin = user(c, "admin@itsm.local")
+    t1 = user(c, "t1@itsm.local")
+    t2 = user(c, "t2@itsm.local")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    
+    # Assign to t1
+    c.incident_service.assign_incident(admin, inc.id, t1.id)
+    c.incident_service.acknowledge(t1, inc.id)
+    
+    # Admin reassigns from t1 to t2
+    _login(client, email="admin@itsm.local")
+    reassign_res = client.post(f"/admin/incidents/{inc.id}/assign", data={"technician_id": t2.id})
+    assert reassign_res.status_code == 303
+    
+    # Initial technician t1 logs in
+    _login(client, email="t1@itsm.local")
+    
+    # Verify t1's notifications contain the reassignment notification
+    t1_notes = c.notifications.list_for_recipient(t1.id)
+    assert any("Reassigned to Tom Net" in n["subject"] or "Reassigned to Tom Net" in n["body"] for n in t1_notes)
+    
+    # Check that it renders in t1's notifications UI
+    notes_page = client.get("/notifications")
+    assert notes_page.status_code == 200
+    assert "Reassigned to Tom Net" in notes_page.text
+
+def test_unread_notification_badge_and_mark_all_read(client):
+    c = app.state.container
+    admin = user(c, "admin@itsm.local")
+    t1 = user(c, "t1@itsm.local")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    
+    # Assign incident to t1 to generate a notification
+    c.incident_service.assign_incident(admin, inc.id, t1.id)
+    
+    # Log in as t1
+    _login(client, email="t1@itsm.local")
+    
+    # Check navbar badge on technician home page
+    home_res = client.get("/technician")
+    assert home_res.status_code == 200
+    assert "badge rounded-pill bg-danger" in home_res.text
+    
+    # Click Mark All as Read
+    read_all_res = client.post("/notifications/read-all")
+    assert read_all_res.status_code == 303
+    
+    # Now verify unread count is 0 and badge is gone
+    home_after = client.get("/technician")
+    assert home_after.status_code == 200
+    assert "badge rounded-pill bg-danger" not in home_after.text
+
+
 
 
 

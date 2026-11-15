@@ -57,3 +57,10 @@ def mark_notification_read(request: Request, notification_id: int):
     container(request).notifications.mark_read(notification_id)
     return RedirectResponse("/notifications", 303)
 
+@router.post("/notifications/read-all")
+def mark_all_notifications_read(request: Request):
+    uid = request.session.get("user_id")
+    if not uid: return RedirectResponse("/login", 303)
+    container(request).notifications.mark_all_read(uid)
+    return RedirectResponse("/notifications?msg=All+notifications+marked+as+read", 303)
+

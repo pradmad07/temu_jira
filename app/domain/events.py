@@ -22,6 +22,7 @@ class IncidentEvent:
     new_status: Optional[str]
     description: str
     timestamp: datetime = field(default_factory=utcnow)
+    previous_assignee: Optional[str] = None
 
 class EventBus:
     def __init__(self): self._subscribers: list[Callable[[IncidentEvent], None]] = []

@@ -10,6 +10,12 @@
 <div class="card shadow-sm">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
     <strong>Inbox ({{ notifications|length }})</strong>
+    {% set unread = unread_count_for(request, user.id) %}
+    {% if unread > 0 %}
+      <form method="post" action="/notifications/read-all" class="m-0">
+        <button class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.8rem;">Mark All as Read ({{ unread }})</button>
+      </form>
+    {% endif %}
   </div>
   <div class="card-body p-0">
     {% if notifications %}

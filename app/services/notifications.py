@@ -96,6 +96,8 @@ class NotificationService:
             elif event.type in (EV_ASSIGNED, EV_REASSIGNED):
                 if assignee_id:
                     recipients.add(assignee_id)
+                if getattr(event, "previous_assignee", None):
+                    recipients.add(event.previous_assignee)
                 elif reporter_id:
                     recipients.add(reporter_id)
 

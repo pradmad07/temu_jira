@@ -25,6 +25,17 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 templates.env.filters["ist"] = format_ist
 templates.env.globals["format_ist"] = format_ist
 templates.env.globals["IST"] = IST
+
+def get_unread_count(request: Request, user_id: str) -> int:
+    try:
+        c = container(request)
+        if hasattr(c, "notifications"):
+            return len(c.notifications.list_for_recipient(user_id, unread_only=True))
+    except Exception:
+        pass
+    return 0
+
+templates.env.globals["unread_count_for"] = get_unread_count
 def container(request: Request): return request.app.state.container
 
 def _current_user(request: Request):

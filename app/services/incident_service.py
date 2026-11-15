@@ -20,14 +20,14 @@ class IncidentService:
         inc = self._incidents.get(incident_id)
         if inc is None: raise NotFoundError(f"Incident {incident_id} not found")
         return inc
-    def _publish(self, etype, inc, actor, old, new, text):
-        self._bus.publish(IncidentEvent(etype, inc.id, actor.id if actor else None, old, new, text, timestamp=self._clock.now()))
-    def _apply(self, inc, actor, action, event, text, **kwargs):
+    def _publish(self, etype, inc, actor, old, new, text, previous_assignee=None):
+        self._bus.publish(IncidentEvent(etype, inc.id, actor.id if actor else None, old, new, text, timestamp=self._clock.now(), previous_assignee=previous_assignee))
+    def _apply(self, inc, actor, action, event, text, previous_assignee=None, **kwargs):
         """The shared recipe for every lifecycle change."""
         old = inc.status.value
         getattr(inc, action)(**kwargs)          # the State object may refuse -> InvalidTransitionError
         self._incidents.save(inc)
-        self._publish(event, inc, actor, old, inc.status.value, text)
+        self._publish(event, inc, actor, old, inc.status.value, text, previous_assignee=previous_assignee)
         return inc
     @staticmethod
     def _require_assignee(actor, inc):
@@ -92,9 +92,12 @@ class IncidentService:
             if self._incidents.count_active_by_technician(target.id) >= target.max_workload:
                 raise WorkloadExceededError(f"{target.name} is at their workload limit ({target.max_workload})")
         first = inc.status == Status.CLASSIFIED
+        prev = inc.assigned_to
         how = "" if actor else " automatically"
         return self._apply(inc, actor, "assign" if first else "reassign", EV_ASSIGNED if first else EV_REASSIGNED,
-                           f"{'Assigned' if first else 'Reassigned'} to {target.name}{how}", technician_id=target.id)
+                           f"{'Assigned' if first else 'Reassigned'} to {target.name}{how}",
+                           previous_assignee=prev if not first else None,
+                           technician_id=target.id)
 
     def change_priority(self, actor, incident_id, priority, reason) -> Incident:
         if not actor.can(Perm.INCIDENT_ASSIGN): raise AuthorizationError("You cannot change priority")
