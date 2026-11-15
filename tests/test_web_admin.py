@@ -66,3 +66,14 @@ def test_admin_can_view_audit_trail(client):
     res = client.get("/admin/audit")
     assert res.status_code == 200
     assert "System Audit Trail Log" in res.text
+
+def test_admin_can_inspect_incident_detail(client):
+    from tests.helpers import report
+    from app.main import app
+    c = app.state.container
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    _login(client, email="admin@itsm.local")
+    res = client.get(f"/admin/incidents/{inc.id}")
+    assert res.status_code == 200
+    assert inc.id in res.text
+    assert inc.title in res.text

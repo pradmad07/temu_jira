@@ -79,7 +79,7 @@
                 <tbody>
                     {% for inc in incidents %}
                     <tr>
-                        <td><code><a href="/employee/incidents/{{ inc.id }}" class="fw-bold">{{ inc.id }}</a></code></td>
+                        <td><code><a href="/admin/incidents/{{ inc.id }}" class="fw-bold">{{ inc.id }}</a></code></td>
                         <td>
                             <div class="fw-medium">{{ inc.title }}</div>
                             <div class="badge bg-secondary-subtle text-secondary small">{{ inc.category }}</div>
@@ -122,7 +122,7 @@
                         </td>
                         <td class="small text-muted">{{ inc.created_at.strftime('%Y-%m-%d %H:%M') if inc.created_at else '-' }}</td>
                         <td class="text-end">
-                            <a href="/employee/incidents/{{ inc.id }}" class="btn btn-outline-primary btn-sm">Inspect</a>
+                            <a href="/admin/incidents/{{ inc.id }}" class="btn btn-outline-primary btn-sm">Inspect</a>
                         </td>
                     </tr>
                     {% else %}

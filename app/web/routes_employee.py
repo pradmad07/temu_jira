@@ -22,6 +22,6 @@ def create(request: Request, user=employee, title: str = Form(), description: st
     return RedirectResponse(f"/employee/incidents/{inc.id}", 303)
 
 @router.get("/incidents/{incident_id}")
-def detail(request: Request, incident_id: str, user=employee):
+def detail(request: Request, incident_id: str, user=Depends(require_permission(Perm.INCIDENT_VIEW_OWN, Perm.INCIDENT_VIEW_ALL))):
     c = container(request)
     return templates.TemplateResponse(request, "incident_detail.html", {"user": user, "incident": c.incident_service.get_incident(user, incident_id), "history": c.audit.list_for_incident(incident_id)})

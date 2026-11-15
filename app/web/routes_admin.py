@@ -93,6 +93,22 @@ def list_incidents(
         }
     )
 
+@router.get("/incidents/{incident_id}")
+def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
+    c = container(request)
+    incident = c.incident_service.get_incident(user, incident_id)
+    history = c.audit.list_for_incident(incident_id)
+    comments = c.collab.list_comments(user, incident_id) if hasattr(c, "collab") else []
+    return templates.TemplateResponse(
+        request, "incident_detail.html",
+        {
+            "user": user,
+            "incident": incident,
+            "history": history,
+            "comments": comments,
+        }
+    )
+
 # ----------------- Users Management -----------------
 @router.get("/users")
 def list_users(request: Request, user=admin_users):

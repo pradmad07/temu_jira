@@ -171,7 +171,7 @@
                         <td><code>{{ rec.actor_id or 'System' }}</code></td>
                         <td>
                             {% if rec.incident_id %}
-                            <a href="/employee/incidents/{{ rec.incident_id }}">{{ rec.incident_id }}</a>
+                            <a href="/admin/incidents/{{ rec.incident_id }}">{{ rec.incident_id }}</a>
                             {% else %}
                             <span class="text-muted">Global</span>
                             {% endif %}

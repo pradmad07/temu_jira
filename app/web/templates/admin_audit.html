@@ -30,7 +30,7 @@
                         <td><code>{{ rec.actor_id or 'System' }}</code></td>
                         <td>
                             {% if rec.incident_id %}
-                            <code><a href="/employee/incidents/{{ rec.incident_id }}">{{ rec.incident_id }}</a></code>
+                            <code><a href="/admin/incidents/{{ rec.incident_id }}">{{ rec.incident_id }}</a></code>
                             {% else %}
                             <span class="badge bg-light text-secondary border">Global Config</span>
                             {% endif %}
