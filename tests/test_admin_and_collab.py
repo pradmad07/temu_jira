@@ -57,3 +57,37 @@ def test_search_filters_status_and_category(c):   # TODO(Gaurav)
     from app.domain.enums import Status
     inc = report(c)
     assert [i.id for i in c.incidents.search(IncidentFilter(status=Status.CLASSIFIED, category="DATABASE"))] == [inc.id]
+
+def test_audit_repository_search_and_sort(c):
+    from app.domain.filters import AuditFilter
+    admin_user = user(c, "admin@itsm.local")
+    c.admin.add_category(admin_user, "AUDITREPOTEST")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    
+    # Text search
+    res_text = c.audit.search(AuditFilter(text="AUDITREPOTEST"))
+    assert len(res_text) >= 1
+    assert any("AUDITREPOTEST" in r.description for r in res_text)
+    
+    # Action filter
+    res_act = c.audit.search(AuditFilter(action="CONFIG_CHANGED"))
+    assert all(r.action == "CONFIG_CHANGED" for r in res_act)
+    
+    # Incident ID filter
+    res_inc = c.audit.search(AuditFilter(incident_id=inc.id))
+    assert all(r.incident_id == inc.id for r in res_inc)
+    
+    # Sort order
+    res_desc = c.audit.search(AuditFilter(sort_by="timestamp", sort_dir="desc"))
+    res_asc = c.audit.search(AuditFilter(sort_by="timestamp", sort_dir="asc"))
+    assert res_desc[0].timestamp >= res_asc[0].timestamp
+    
+    # Action sort
+    res_act_sort = c.audit.search(AuditFilter(sort_by="action", sort_dir="asc"))
+    actions = [r.action for r in res_act_sort]
+    assert actions == sorted(actions)
+    
+    # List actions
+    all_acts = c.audit.list_actions()
+    assert "CONFIG_CHANGED" in all_acts
+    assert "INCIDENT_CREATED" in all_acts

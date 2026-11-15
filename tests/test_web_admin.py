@@ -72,6 +72,44 @@ def test_admin_can_view_audit_trail(client):
     assert res.status_code == 200
     assert "System Audit Trail Log" in res.text
 
+def test_admin_audit_search_and_sort(client):
+    from tests.helpers import report, user
+    from app.main import app
+    c = app.state.container
+    admin_user = user(c, "admin@itsm.local")
+    # Trigger some audited actions
+    c.admin.add_category(admin_user, "AUDITTESTCAT")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    
+    _login(client, email="admin@itsm.local")
+    
+    # Text search
+    res = client.get("/admin/audit?text=AUDITTESTCAT")
+    assert res.status_code == 200
+    assert "Category added: AUDITTESTCAT" in res.text
+    
+    # Non-matching text search
+    res_nomatch = client.get("/admin/audit?text=NONEXISTENT_XYZ_TERM")
+    assert res_nomatch.status_code == 200
+    assert "No audit records found matching your query criteria." in res_nomatch.text
+    
+    # Action filter
+    res_act = client.get("/admin/audit?action=CONFIG_CHANGED")
+    assert res_act.status_code == 200
+    assert "CONFIG_CHANGED" in res_act.text
+    
+    # Incident ID filter
+    res_inc = client.get(f"/admin/audit?incident_id={inc.id}")
+    assert res_inc.status_code == 200
+    assert inc.id in res_inc.text
+    
+    # Sort order
+    res_sort_asc = client.get("/admin/audit?sort=timestamp_asc")
+    assert res_sort_asc.status_code == 200
+    
+    res_sort_action = client.get("/admin/audit?sort_by=action&sort_dir=asc")
+    assert res_sort_action.status_code == 200
+
 def test_admin_can_inspect_incident_detail(client):
     from tests.helpers import report
     from app.main import app

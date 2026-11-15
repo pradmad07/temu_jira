@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 from app.domain.models import User, Technician, Incident, AuditRecord, Service, SlaPolicy, Comment, Feedback
 from app.domain.enums import Priority
-from app.domain.filters import IncidentFilter
+from app.domain.filters import IncidentFilter, AuditFilter
 
 class UserRepository(ABC):
     @abstractmethod
@@ -45,6 +45,10 @@ class AuditRepository(ABC):
     def list_for_incident(self, incident_id: str) -> list[AuditRecord]: ...
     @abstractmethod
     def list_all(self, limit: int = 200) -> list[AuditRecord]: """Newest first (admin audit log)."""
+    @abstractmethod
+    def search(self, f: Optional[AuditFilter] = None, limit: int = 200, offset: int = 0) -> list[AuditRecord]: ...
+    @abstractmethod
+    def list_actions(self) -> list[str]: ...
 
 class ServiceRepository(ABC):
     @abstractmethod

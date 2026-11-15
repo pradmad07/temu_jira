@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import RedirectResponse
 from app.domain.enums import Role, Priority, Status
-from app.domain.filters import IncidentFilter
+from app.domain.filters import IncidentFilter, AuditFilter
 from app.domain.permissions import Perm
 from app.services.assignment import strategy_by_name
 from .deps import templates, container, require_permission
@@ -222,13 +222,53 @@ def disable_category(request: Request, category_name: str, user=admin_config):
 
 # ----------------- Audit Trail -----------------
 @router.get("/audit")
-def view_audit_log(request: Request, user=admin_audit_perm):
+def view_audit_log(
+    request: Request,
+    user=admin_audit_perm,
+    text: Optional[str] = None,
+    action: Optional[str] = None,
+    incident_id: Optional[str] = None,
+    actor_id: Optional[str] = None,
+    sort: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_dir: Optional[str] = None,
+):
     c = container(request)
-    records = c.audit.list_all(limit=200)
+
+    sb = sort_by or "timestamp"
+    sd = sort_dir or "desc"
+    if sort:
+        parts = sort.rsplit("_", 1)
+        if len(parts) == 2 and parts[1].lower() in ("asc", "desc"):
+            sb, sd = parts[0], parts[1].lower()
+        else:
+            sb = sort
+
+    af = AuditFilter(
+        text=text or None,
+        action=action or None,
+        incident_id=incident_id or None,
+        actor_id=actor_id or None,
+        sort_by=sb,
+        sort_dir=sd,
+    )
+    records = c.audit.search(af, limit=200)
+    all_actions = c.audit.list_actions()
+
     return templates.TemplateResponse(
         request, "admin_audit.html",
         {
             "user": user,
             "records": records,
+            "actions": all_actions,
+            "filters": {
+                "text": text or "",
+                "action": action or "",
+                "incident_id": incident_id or "",
+                "actor_id": actor_id or "",
+                "sort_by": sb,
+                "sort_dir": sd,
+                "sort": f"{sb}_{sd}",
+            },
         }
     )

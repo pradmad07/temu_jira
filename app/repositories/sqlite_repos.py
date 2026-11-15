@@ -144,6 +144,67 @@ class SqliteAuditRepository(AuditRepository):
         return [self._rec(r) for r in self._db.query("SELECT * FROM audit_records WHERE incident_id=? ORDER BY id", (incident_id,))]
     def list_all(self, limit=200):
         return [self._rec(r) for r in self._db.query("SELECT * FROM audit_records ORDER BY id DESC LIMIT ?", (limit,))]
+    def list_actions(self) -> list[str]:
+        rows = self._db.query("SELECT DISTINCT action FROM audit_records WHERE action IS NOT NULL ORDER BY action")
+        return [r["action"] for r in rows if r["action"]]
+    def search(self, f=None, limit=200, offset=0):
+        clauses, params = [], []
+        if f:
+            if f.incident_id:
+                clauses.append("incident_id LIKE ?")
+                params.append(f"%{f.incident_id.strip()}%")
+            if f.actor_id:
+                clauses.append("actor_id = ?")
+                params.append(f.actor_id.strip())
+            if f.action:
+                clauses.append("action = ?")
+                params.append(f.action.strip())
+            if f.text:
+                pat = f"%{f.text.strip()}%"
+                clauses.append("(incident_id LIKE ? OR actor_id LIKE ? OR action LIKE ? OR description LIKE ? OR old_status LIKE ? OR new_status LIKE ?)")
+                params.extend([pat, pat, pat, pat, pat, pat])
+            if f.date_from:
+                clauses.append("timestamp >= ?")
+                params.append(f.date_from.isoformat() if hasattr(f.date_from, "isoformat") else str(f.date_from))
+            if f.date_to:
+                clauses.append("timestamp <= ?")
+                params.append(f.date_to.isoformat() if hasattr(f.date_to, "isoformat") else str(f.date_to))
+
+        sort_by = (f.sort_by if f and f.sort_by else "timestamp").lower().strip()
+        sort_dir = (f.sort_dir if f and f.sort_dir else "desc").upper().strip()
+        if sort_dir not in ("ASC", "DESC"):
+            sort_dir = "DESC"
+
+        col_map = {
+            "timestamp": "timestamp",
+            "date": "timestamp",
+            "time": "timestamp",
+            "id": "id",
+            "action": "action",
+            "actor": "actor_id",
+            "actor_id": "actor_id",
+            "incident": "incident_id",
+            "incident_id": "incident_id",
+            "description": "description",
+        }
+        order_col = col_map.get(sort_by, "id")
+
+        sql = "SELECT * FROM audit_records"
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+
+        if order_col in ("incident_id", "actor_id"):
+            sql += f" ORDER BY ({order_col} IS NULL OR {order_col} = ''), {order_col} {sort_dir}, id DESC"
+        elif order_col in ("timestamp", "date", "time"):
+            sql += f" ORDER BY timestamp {sort_dir}, id {sort_dir}"
+        elif order_col == "id":
+            sql += f" ORDER BY id {sort_dir}"
+        else:
+            sql += f" ORDER BY {order_col} {sort_dir}, id DESC"
+
+        sql += " LIMIT ? OFFSET ?"
+        params.extend([int(limit), int(offset)])
+        return [self._rec(r) for r in self._db.query(sql, tuple(params))]
 
 class SqliteServiceRepository(ServiceRepository):
     def __init__(self, db: Database): self._db = db
