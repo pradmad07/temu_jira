@@ -47,26 +47,31 @@
 {% endif %}
 
 {% if incident.reporter_id == user.id and incident.status.value == 'RESOLVED' %}
-<div class="card border-primary mb-4">
+<div class="card border-primary mb-4 shadow-sm">
   <div class="card-header bg-primary text-white">
-    <strong>Verify Resolution</strong>
+    <strong class="fs-5">Action Required: Verify or Reject Resolution</strong>
   </div>
   <div class="card-body">
-    <p>The technician has resolved this incident. Please confirm if the problem is completely fixed or if it still persists.</p>
-    <div class="d-flex gap-3">
-      <form method="post" action="/employee/incidents/{{ incident.id }}/verify">
-        <button class="btn btn-success">Confirm Fix (Verify)</button>
-      </form>
-      <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#rejectForm">
-        Report Still Broken (Reject Fix)
-      </button>
-    </div>
-    <div class="collapse mt-3" id="rejectForm">
-      <form method="post" action="/employee/incidents/{{ incident.id }}/reject" class="p-3 bg-light rounded border">
-        <label class="form-label fw-bold">Reason / What is still broken?</label>
-        <textarea class="form-control mb-2" name="reason" rows="2" placeholder="Explain what is still not working..." required></textarea>
-        <button class="btn btn-danger btn-sm">Submit Rejection & Reopen Investigation</button>
-      </form>
+    <p class="text-secondary">The technician marked this incident as resolved. Please review and confirm whether the problem is fixed or still persists.</p>
+    <div class="row g-4 mt-1">
+      <div class="col-md-5 border-end">
+        <h6 class="text-success fw-bold">&#10004; The issue is fixed</h6>
+        <p class="small text-muted mb-3">Confirming will mark the resolution as verified and allow you to rate the service quality.</p>
+        <form method="post" action="/employee/incidents/{{ incident.id }}/verify">
+          <button class="btn btn-success w-100">Confirm Fix (Verify)</button>
+        </form>
+      </div>
+
+      <div class="col-md-7">
+        <h6 class="text-danger fw-bold">&#10008; The issue still persists</h6>
+        <p class="small text-muted mb-2">Explain what is still broken. This will automatically reopen the investigation.</p>
+        <form method="post" action="/employee/incidents/{{ incident.id }}/reject">
+          <div class="mb-2">
+            <textarea class="form-control" name="reason" rows="2" placeholder="Explain what is still not working..." required></textarea>
+          </div>
+          <button class="btn btn-danger w-100">Report Still Broken (Reopen Ticket)</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>

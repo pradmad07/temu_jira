@@ -1,6 +1,9 @@
 """Employee pages & lifecycle interactions."""
+from urllib.parse import quote_plus
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import RedirectResponse
+from app.domain.models import Comment
+from app.domain.exceptions import ItsmError
 from app.domain.permissions import Perm
 from .deps import templates, container, require_permission
 
@@ -61,6 +64,7 @@ def detail(
             "history": history,
             "comments": comments,
             "feedback": feedback,
+            "error": request.query_params.get("error"),
         }
     )
 
@@ -71,13 +75,21 @@ def reply(request: Request, incident_id: str, user=employee, answer: str = Form(
 
 @router.post("/incidents/{incident_id}/verify")
 def verify(request: Request, incident_id: str, user=employee):
-    container(request).incident_service.verify(user, incident_id)
-    return RedirectResponse(f"/employee/incidents/{incident_id}?msg=Resolution+confirmed+successfully", 303)
+    try:
+        container(request).incident_service.verify(user, incident_id)
+        return RedirectResponse(f"/employee/incidents/{incident_id}?msg=Resolution+confirmed+successfully.+Please+rate+the+service+below.", 303)
+    except ItsmError as e:
+        return RedirectResponse(f"/employee/incidents/{incident_id}?error={quote_plus(str(e))}", 303)
 
 @router.post("/incidents/{incident_id}/reject")
-def reject(request: Request, incident_id: str, user=employee, reason: str = Form()):
-    container(request).incident_service.reject_resolution(user, incident_id, reason)
-    return RedirectResponse(f"/employee/incidents/{incident_id}?msg=Resolution+rejected.+Investigation+reopened.", 303)
+def reject(request: Request, incident_id: str, user=employee, reason: str = Form("")):
+    c = container(request)
+    try:
+        c.incident_service.reject_resolution(user, incident_id, reason)
+        c.comments.add(Comment(incident_id, user.id, "REPLY", f"Resolution Rejected - Still broken: {reason.strip()}", False, c.clock.now()))
+        return RedirectResponse(f"/employee/incidents/{incident_id}?msg=Resolution+rejected.+Investigation+reopened.", 303)
+    except ItsmError as e:
+        return RedirectResponse(f"/employee/incidents/{incident_id}?error={quote_plus(str(e))}", 303)
 
 @router.post("/incidents/{incident_id}/feedback")
 def submit_feedback(

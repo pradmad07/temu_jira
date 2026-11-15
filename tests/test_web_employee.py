@@ -116,6 +116,10 @@ def test_employee_can_reject_resolution(client):
     from app.domain.enums import Status
     assert reloaded.status == Status.IN_PROGRESS
 
+    # Check that rejection reason appears in comments
+    comments = c.collab.list_comments(t1, inc.id)
+    assert any("Error 500 still occurring on checkout page" in com.body for com in comments)
+
 def test_unauthenticated_notifications_redirects(client):
     res = client.get("/notifications")
     assert res.status_code == 303
