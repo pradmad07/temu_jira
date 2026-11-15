@@ -51,6 +51,7 @@ def test_admin_can_view_incidents_list_and_filter(client):
     res = client.get("/admin/incidents?status=CLASSIFIED")
     assert res.status_code == 200
     assert "Incident Operations Center" in res.text
+    assert "Reporter" in res.text
 
 def test_admin_can_view_and_manage_users(client):
     _login(client, email="admin@itsm.local")
@@ -123,6 +124,8 @@ def test_admin_can_inspect_incident_detail(client):
     assert "Technician Assignment &amp; Recommendations" in res.text or "Technician Assignment & Recommendations" in res.text
     assert "/admin/incidents" in res.text
     assert "Back to All Incidents" in res.text
+    assert "Reported by:" in res.text
+    assert "e1@itsm.local" in res.text
 
 def test_admin_can_access_employee_incidents_without_403(client):
     _login(client, email="admin@itsm.local")

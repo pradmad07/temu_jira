@@ -173,6 +173,8 @@ def test_technician_can_view_feedback(client):
     home_res = client.get("/technician")
     assert home_res.status_code == 200
     assert "5/5" in home_res.text
+    assert "Reported by:" in home_res.text
+    assert e1.name in home_res.text
 
     # Technician views incident detail
     detail_res = client.get(f"/technician/incidents/{inc.id}")
@@ -181,6 +183,8 @@ def test_technician_can_view_feedback(client):
     assert "5 / 5" in detail_res.text
     assert "Amazing technician support!" in detail_res.text
     assert "Technician recommendations" not in detail_res.text
+    assert "Reported by (Customer):" in detail_res.text
+    assert "e1@itsm.local" in detail_res.text
 
 def test_internal_note_visibility_rules(client):
     c = app.state.container

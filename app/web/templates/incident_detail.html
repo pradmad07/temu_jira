@@ -26,12 +26,30 @@
     <p class="card-text text-secondary mb-3" style="white-space: pre-wrap;">{{ incident.description }}</p>
     
     <div class="row g-2 small text-muted border-top pt-2">
-      <div class="col-sm-4"><strong>Service:</strong> {{ incident.service_id }}</div>
-      <div class="col-sm-4"><strong>Impact / Urgency:</strong> {{ incident.impact }} / {{ incident.urgency }}</div>
-      <div class="col-sm-4"><strong>Users Affected:</strong> {{ incident.affected_users }}</div>
+      <div class="col-md-3 col-sm-6">
+        <strong>Reported by:</strong><br>
+        {% if reporter %}
+          <span class="text-dark fw-bold">{{ reporter.name }}</span><br>
+          <a href="mailto:{{ reporter.email }}" class="text-muted">{{ reporter.email }}</a>
+        {% else %}
+          <code>{{ incident.reporter_id }}</code>
+        {% endif %}
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <strong>Service:</strong><br>
+        <span class="text-dark">{{ incident.service_id }}</span>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <strong>Impact / Urgency:</strong><br>
+        <span class="text-dark">{{ incident.impact }} / {{ incident.urgency }}</span>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <strong>Users Affected:</strong><br>
+        <span class="text-dark">{{ incident.affected_users }}</span>
+      </div>
     </div>
     {% if incident.sla %}
-    <div class="small text-muted mt-2">
+    <div class="small text-muted mt-2 pt-2 border-top">
       <span>Response due: <strong>{{ incident.sla.response_due|ist }}</strong></span> | 
       <span>Resolution due: <strong>{{ incident.sla.resolution_due|ist }}</strong></span>
     </div>
@@ -43,7 +61,7 @@
 <div class="card shadow-sm mb-4 border-primary">
   <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
     <strong>Technician Assignment & Recommendations</strong>
-    <span class="badge bg-light text-dark">Current Assignee: {{ incident.assigned_to or 'Unassigned' }}</span>
+    <span class="badge bg-light text-dark">Current Assignee: {% if assignee %}{{ assignee.name }} ({{ assignee.email }}){% else %}{{ incident.assigned_to or 'Unassigned' }}{% endif %}</span>
   </div>
   <div class="card-body">
     {% if recommendations %}

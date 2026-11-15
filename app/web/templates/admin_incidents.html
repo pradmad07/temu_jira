@@ -68,6 +68,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Title & Category</th>
+                        <th>Reporter</th>
                         <th>Priority</th>
                         <th>Status</th>
                         <th>Service</th>
@@ -83,6 +84,15 @@
                         <td>
                             <div class="fw-medium">{{ inc.title }}</div>
                             <div class="badge bg-secondary-subtle text-secondary small">{{ inc.category }}</div>
+                        </td>
+                        <td>
+                            {% set rep = reporters.get(inc.reporter_id) if reporters else None %}
+                            {% if rep %}
+                            <div class="fw-medium text-dark">{{ rep.name }}</div>
+                            <div class="text-muted small">{{ rep.email }}</div>
+                            {% else %}
+                            <code>{{ inc.reporter_id }}</code>
+                            {% endif %}
                         </td>
                         <td>
                             {% if inc.priority %}
@@ -115,7 +125,8 @@
                         <td class="small">{{ inc.service_id }}</td>
                         <td>
                             {% if inc.assigned_to %}
-                            <span class="small badge bg-light text-dark border">{{ inc.assigned_to }}</span>
+                            {% set tech = reporters.get(inc.assigned_to) if reporters else None %}
+                            <span class="small badge bg-light text-dark border">{{ tech.name if tech else inc.assigned_to }}</span>
                             {% else %}
                             <span class="text-muted small"><em>Unassigned</em></span>
                             {% endif %}
@@ -127,7 +138,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">No incidents matched your query criteria.</td>
+                        <td colspan="9" class="text-center text-muted py-4">No incidents matched your query criteria.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

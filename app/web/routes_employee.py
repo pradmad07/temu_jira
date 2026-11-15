@@ -56,11 +56,15 @@ def detail(
     history = c.audit.list_for_incident(incident_id)
     comments = c.collab.list_comments(user, incident_id)
     feedback = c.feedback.get(incident_id)
+    reporter = c.users.get(incident.reporter_id)
+    assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
     return templates.TemplateResponse(
         request, "incident_detail.html",
         {
             "user": user,
             "incident": incident,
+            "reporter": reporter,
+            "assignee": assignee,
             "history": history,
             "comments": comments,
             "feedback": feedback,

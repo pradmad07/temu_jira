@@ -1,10 +1,57 @@
 {% extends "base.html" %}
 {% block body %}
-<a href="/technician">Back to dashboard</a>
-<h4 class="mt-3">{{ incident.id }} - {{ incident.title }}</h4>
-<p>{{ incident.description }}</p>
-<p>Status <b>{{ incident.status.value }}</b> | Priority <b>{{ incident.priority.name if incident.priority else '-' }}</b> | Category {{ incident.category }}</p>
-{% if incident.sla %}<p class="small text-muted">Response due {{ incident.sla.response_due|ist }} | Resolution due {{ incident.sla.resolution_due|ist }}</p>{% endif %}
+<div class="mb-3">
+  <a href="/technician" class="btn btn-sm btn-outline-secondary">&larr; Back to dashboard</a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div>
+      <span class="badge bg-secondary me-2">{{ incident.id }}</span>
+      <span class="badge bg-info text-dark me-2">{{ incident.category }}</span>
+      <span class="badge {% if incident.priority and incident.priority.name == 'P1' %}bg-danger{% elif incident.priority and incident.priority.name == 'P2' %}bg-warning text-dark{% else %}bg-primary{% endif %}">
+        {{ incident.priority.name if incident.priority else 'Unclassified' }}
+      </span>
+    </div>
+    <span class="badge {% if incident.status.value in ('RESOLVED', 'VERIFIED') %}bg-success{% elif incident.status.value == 'CLOSED' %}bg-dark{% else %}bg-warning text-dark{% endif %} fs-6">
+      {{ incident.status.value }}
+    </span>
+  </div>
+  <div class="card-body">
+    <h4 class="card-title">{{ incident.title }}</h4>
+    <p class="card-text text-secondary mb-3" style="white-space: pre-wrap;">{{ incident.description }}</p>
+    
+    <div class="row g-2 small text-muted border-top pt-2">
+      <div class="col-md-4 col-sm-6">
+        <strong>Reported by (Customer):</strong><br>
+        {% if reporter %}
+          <span class="text-dark fw-bold">{{ reporter.name }}</span><br>
+          <a href="mailto:{{ reporter.email }}" class="text-muted">{{ reporter.email }}</a>
+        {% else %}
+          <code>{{ incident.reporter_id }}</code>
+        {% endif %}
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <strong>Service:</strong><br>
+        <span class="text-dark">{{ incident.service_id }}</span>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <strong>Users Affected:</strong><br>
+        <span class="text-dark">{{ incident.affected_users }}</span>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <strong>Reported At:</strong><br>
+        <span class="text-dark">{{ incident.created_at|ist }}</span>
+      </div>
+    </div>
+    {% if incident.sla %}
+    <div class="small text-muted mt-2 pt-2 border-top">
+      <span>Response due: <strong>{{ incident.sla.response_due|ist }}</strong></span> | 
+      <span>Resolution due: <strong>{{ incident.sla.resolution_due|ist }}</strong></span>
+    </div>
+    {% endif %}
+  </div>
+</div>
 
 {% if feedback %}
 <div class="card border-info mb-3">

@@ -74,11 +74,13 @@ def list_incidents(
         sla_status=sla_status or None,
     )
     incidents = c.incidents.search(f, limit=100)
+    reporters = {u.id: u for u in c.users.list_all()}
     return templates.TemplateResponse(
         request, "admin_incidents.html",
         {
             "user": user,
             "incidents": incidents,
+            "reporters": reporters,
             "statuses": list(Status),
             "priorities": list(Priority),
             "categories": c.categories.list_active(),
@@ -105,11 +107,15 @@ def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
     workloads = {t.id: c.incidents.count_active_by_technician(t.id) for t in technicians}
     strategy = strategy_by_name(c.config.get("assignment_strategy", "skill"))
     recommendations = strategy.recommend(incident, technicians, workloads)
+    reporter = c.users.get(incident.reporter_id)
+    assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
     return templates.TemplateResponse(
         request, "incident_detail.html",
         {
             "user": user,
             "incident": incident,
+            "reporter": reporter,
+            "assignee": assignee,
             "history": history,
             "comments": comments,
             "feedback": feedback,

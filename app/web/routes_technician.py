@@ -18,12 +18,14 @@ def home(request: Request, user=technician):
     c = container(request)
     incidents = c.incident_service.list_for(user)
     feedbacks = {inc.id: c.feedback.get(inc.id) for inc in incidents}
+    reporters = {u.id: u for u in c.users.list_all()}
     return templates.TemplateResponse(
         request,
         "technician_home.html",
         {
             "user": user,
             "incidents": incidents,
+            "reporters": reporters,
             "active_count": c.incidents.count_active_by_technician(user.id),
             "max_workload": user.max_workload,
             "feedbacks": feedbacks,
@@ -41,12 +43,14 @@ def detail(request: Request, incident_id: str, user=technician):
     candidates = c.users.list_technicians()
     workloads = {candidate.id: c.incidents.count_active_by_technician(candidate.id) for candidate in candidates}
     feedback = c.feedback.get(incident_id)
+    reporter = c.users.get(incident.reporter_id)
     return templates.TemplateResponse(
         request,
         "technician_detail.html",
         {
             "user": user,
             "incident": incident,
+            "reporter": reporter,
             "history": c.audit.list_for_incident(incident_id),
             "comments": c.collab.list_comments(user, incident_id),
             "duplicates": duplicates,
