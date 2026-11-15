@@ -28,8 +28,8 @@
     </div>
     {% if incident.sla %}
     <div class="small text-muted mt-2">
-      <span>Response due: <strong>{{ incident.sla.response_due.strftime('%d %b %H:%M') }} UTC</strong></span> | 
-      <span>Resolution due: <strong>{{ incident.sla.resolution_due.strftime('%d %b %H:%M') }} UTC</strong></span>
+      <span>Response due: <strong>{{ incident.sla.response_due|ist }}</strong></span> | 
+      <span>Resolution due: <strong>{{ incident.sla.resolution_due|ist }}</strong></span>
     </div>
     {% endif %}
   </div>
@@ -146,7 +146,7 @@
                       {{ c.kind }}
                     {% endif %}
                   </h6>
-                  <small class="text-muted">{{ c.created_at.strftime('%d %b %H:%M') }}</small>
+                  <small class="text-muted">{{ c.created_at|ist }}</small>
                 </div>
                 <p class="mb-1" style="white-space: pre-wrap;">{{ c.body }}</p>
               </div>
@@ -212,7 +212,7 @@
         <ul class="list-unstyled mb-0 small">
           {% for h in history %}
             <li class="mb-2 border-bottom pb-1">
-              <span class="text-muted">{{ h.timestamp.strftime('%H:%M:%S') }}</span> - 
+              <span class="text-muted">{{ h.timestamp|ist('%H:%M:%S IST') }}</span> - 
               <span>{{ h.description }}</span>
             </li>
           {% else %}

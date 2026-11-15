@@ -26,7 +26,7 @@
                 <tbody>
                     {% for rec in records %}
                     <tr>
-                        <td class="small text-muted">{{ rec.timestamp.strftime('%Y-%m-%d %H:%M:%S') if rec.timestamp else '-' }}</td>
+                        <td class="small text-muted">{{ rec.timestamp|ist('%Y-%m-%d %H:%M:%S IST') }}</td>
                         <td><code>{{ rec.actor_id or 'System' }}</code></td>
                         <td>
                             {% if rec.incident_id %}

@@ -1,9 +1,30 @@
 from pathlib import Path
+from datetime import datetime, timezone, timedelta
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from app.domain.exceptions import AuthenticationError, AuthorizationError
 
+IST = timezone(timedelta(hours=5, minutes=30), "IST")
+
+def format_ist(dt, fmt=None):
+    if not dt:
+        return "-"
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt)
+        except Exception:
+            return dt
+    if getattr(dt, "tzinfo", None) is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    ist_dt = dt.astimezone(IST)
+    if fmt:
+        return ist_dt.strftime(fmt)
+    return ist_dt.strftime("%d %b %H:%M") + " IST"
+
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+templates.env.filters["ist"] = format_ist
+templates.env.globals["format_ist"] = format_ist
+templates.env.globals["IST"] = IST
 def container(request: Request): return request.app.state.container
 
 def _current_user(request: Request):

@@ -4,7 +4,7 @@
 <h4 class="mt-3">{{ incident.id }} - {{ incident.title }}</h4>
 <p>{{ incident.description }}</p>
 <p>Status <b>{{ incident.status.value }}</b> | Priority <b>{{ incident.priority.name if incident.priority else '-' }}</b> | Category {{ incident.category }}</p>
-{% if incident.sla %}<p class="small text-muted">Response due {{ incident.sla.response_due.strftime('%d %b %H:%M') }} UTC | Resolution due {{ incident.sla.resolution_due.strftime('%d %b %H:%M') }} UTC</p>{% endif %}
+{% if incident.sla %}<p class="small text-muted">Response due {{ incident.sla.response_due|ist }} | Resolution due {{ incident.sla.resolution_due|ist }}</p>{% endif %}
 
 {% if feedback %}
 <div class="card border-info mb-3">
@@ -100,7 +100,7 @@
                   <span class="badge bg-secondary me-2">{{ comment.kind }}</span>
                 {% endif %}
               </div>
-              <small class="text-muted">{{ comment.created_at.strftime('%d %b %H:%M') }} UTC</small>
+              <small class="text-muted">{{ comment.created_at|ist }}</small>
             </div>
             <p class="mb-0 small text-dark" style="white-space: pre-wrap;">{{ comment.body }}</p>
           </div>
@@ -119,5 +119,5 @@
 <ul>{% for recommendation in recommendations[:3] %}<li>{{ recommendation.technician.name }} ({{ "%.1f"|format(recommendation.score) }}): {{ recommendation.reasons|join(", ") }}</li>{% else %}<li>No eligible technicians.</li>{% endfor %}</ul>
 {% endif %}
 <h6>History</h6>
-<ul>{% for h in history %}<li>{{ h.timestamp.strftime('%H:%M:%S') }} - {{ h.description }}</li>{% endfor %}</ul>
+<ul>{% for h in history %}<li>{{ h.timestamp|ist('%H:%M:%S IST') }} - {{ h.description }}</li>{% endfor %}</ul>
 {% endblock %}

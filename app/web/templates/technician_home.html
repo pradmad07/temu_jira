@@ -13,7 +13,7 @@
     {% endif %}
     {{ incident.status.value }} | {{ incident.priority.name if incident.priority else '-' }}
   </span>
-  <div class="small text-muted">{{ incident.category }} | {{ incident.created_at.strftime('%d %b %H:%M') }} UTC</div>
+  <div class="small text-muted">{{ incident.category }} | {{ incident.created_at|ist }}</div>
 </a>
 {% endfor %}
 </div>

@@ -217,5 +217,14 @@ def test_internal_note_visibility_rules(client):
     assert emp_view.status_code == 200
     assert "Diagnostic secret: database password reset needed on host 10.0.0.1" not in emp_view.text
 
+def test_timestamps_rendered_in_ist(client):
+    c = app.state.container
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    _login(client, email="e1@itsm.local")
+    res = client.get(f"/employee/incidents/{inc.id}")
+    assert res.status_code == 200
+    assert "IST" in res.text
+
+
 
 
