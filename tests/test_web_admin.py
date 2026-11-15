@@ -83,6 +83,13 @@ def test_admin_can_inspect_incident_detail(client):
     assert inc.id in res.text
     assert inc.title in res.text
     assert "Technician Assignment &amp; Recommendations" in res.text or "Technician Assignment & Recommendations" in res.text
+    assert "/admin/incidents" in res.text
+    assert "Back to All Incidents" in res.text
+
+def test_admin_can_access_employee_incidents_without_403(client):
+    _login(client, email="admin@itsm.local")
+    res = client.get("/employee/incidents")
+    assert res.status_code == 200
 
 def test_admin_can_assign_technician_to_incident(client):
     from tests.helpers import report, user

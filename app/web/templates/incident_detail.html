@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="mb-3">
-  <a href="/employee/incidents" class="btn btn-sm btn-outline-secondary">&larr; Back to My Incidents</a>
+  {% if user.can('incident.view_all') %}
+    <a href="/admin/incidents" class="btn btn-sm btn-outline-secondary">&larr; Back to All Incidents</a>
+  {% else %}
+    <a href="/employee/incidents" class="btn btn-sm btn-outline-secondary">&larr; Back to My Incidents</a>
+  {% endif %}
 </div>
 
 <div class="card shadow-sm mb-4">

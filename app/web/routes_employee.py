@@ -11,7 +11,7 @@ router = APIRouter(prefix="/employee")
 employee = Depends(require_permission(Perm.INCIDENT_VIEW_OWN))
 
 @router.get("/incidents")
-def list_incidents(request: Request, user=employee):
+def list_incidents(request: Request, user=Depends(require_permission(Perm.INCIDENT_VIEW_OWN, Perm.INCIDENT_VIEW_ALL))):
     return templates.TemplateResponse(
         request, "incidents_list.html",
         {"user": user, "incidents": container(request).incident_service.list_for(user)}
