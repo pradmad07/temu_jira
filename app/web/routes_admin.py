@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 from app.domain.enums import Role, Priority, Status
 from app.domain.filters import IncidentFilter
 from app.domain.permissions import Perm
+from app.services.assignment import strategy_by_name
 from .deps import templates, container, require_permission
 
 router = APIRouter(prefix="/admin")
@@ -99,6 +100,11 @@ def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
     incident = c.incident_service.get_incident(user, incident_id)
     history = c.audit.list_for_incident(incident_id)
     comments = c.collab.list_comments(user, incident_id) if hasattr(c, "collab") else []
+    feedback = c.feedback.get(incident_id) if hasattr(c, "feedback") else None
+    technicians = c.users.list_technicians()
+    workloads = {t.id: c.incidents.count_active_by_technician(t.id) for t in technicians}
+    strategy = strategy_by_name(c.config.get("assignment_strategy", "skill"))
+    recommendations = strategy.recommend(incident, technicians, workloads)
     return templates.TemplateResponse(
         request, "incident_detail.html",
         {
@@ -106,8 +112,18 @@ def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
             "incident": incident,
             "history": history,
             "comments": comments,
+            "feedback": feedback,
+            "recommendations": recommendations,
+            "technicians": technicians,
         }
     )
+
+@router.post("/incidents/{incident_id}/assign")
+def assign_incident(request: Request, incident_id: str, technician_id: str = Form(None), user=admin_reporter):
+    c = container(request)
+    target = technician_id.strip() if technician_id and technician_id.strip() else None
+    c.incident_service.assign_incident(user, incident_id, target)
+    return RedirectResponse(f"/admin/incidents/{incident_id}?msg=Technician+assigned+successfully", 303)
 
 # ----------------- Users Management -----------------
 @router.get("/users")

@@ -82,3 +82,19 @@ def test_admin_can_inspect_incident_detail(client):
     assert res.status_code == 200
     assert inc.id in res.text
     assert inc.title in res.text
+    assert "Technician Assignment &amp; Recommendations" in res.text or "Technician Assignment & Recommendations" in res.text
+
+def test_admin_can_assign_technician_to_incident(client):
+    from tests.helpers import report, user
+    from app.main import app
+    c = app.state.container
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    t1 = user(c, "t1@itsm.local")
+    _login(client, email="admin@itsm.local")
+    
+    res = client.post(f"/admin/incidents/{inc.id}/assign", data={"technician_id": t1.id})
+    assert res.status_code == 303
+    
+    reloaded = c.incident_service.get_incident(user(c, "admin@itsm.local"), inc.id)
+    assert reloaded.assigned_to == t1.id
+

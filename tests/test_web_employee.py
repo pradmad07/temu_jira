@@ -180,5 +180,6 @@ def test_technician_can_view_feedback(client):
     assert "Reporter Feedback &amp; Service Rating" in detail_res.text or "Reporter Feedback & Service Rating" in detail_res.text
     assert "5 / 5" in detail_res.text
     assert "Amazing technician support!" in detail_res.text
+    assert "Technician recommendations" not in detail_res.text
 
 

@@ -35,6 +35,52 @@
   </div>
 </div>
 
+{% if user.can('incident.assign') and incident.status.value != 'CLOSED' %}
+<div class="card shadow-sm mb-4 border-primary">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <strong>Technician Assignment & Recommendations</strong>
+    <span class="badge bg-light text-dark">Current Assignee: {{ incident.assigned_to or 'Unassigned' }}</span>
+  </div>
+  <div class="card-body">
+    {% if recommendations %}
+      <h6 class="fw-bold mb-2">Recommended Technicians:</h6>
+      <div class="row g-2 mb-3">
+        {% for rec in recommendations[:3] %}
+          <div class="col-md-4">
+            <div class="p-2 border rounded bg-light">
+              <div class="fw-bold d-flex justify-content-between">
+                <span>{{ rec.technician.name }}</span>
+                <span class="badge bg-primary">{{ "%.1f"|format(rec.score) }} pts</span>
+              </div>
+              <small class="text-muted d-block">{{ rec.reasons|join(", ") }}</small>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" action="/admin/incidents/{{ incident.id }}/assign" class="row g-2 align-items-center">
+      <div class="col-auto">
+        <label class="form-label mb-0 fw-bold small">Assign To:</label>
+      </div>
+      <div class="col-auto">
+        <select name="technician_id" class="form-select form-select-sm">
+          <option value="">-- Auto-assign (System Strategy) --</option>
+          {% for t in technicians %}
+            <option value="{{ t.id }}" {% if incident.assigned_to == t.id %}selected{% endif %}>
+              {{ t.name }} ({{ t.email }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary btn-sm">Assign / Reassign</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
 {% if incident.resolution %}
 <div class="card border-success mb-4">
   <div class="card-header bg-success text-white">
