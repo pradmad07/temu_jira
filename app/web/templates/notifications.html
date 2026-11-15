@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="mb-0">Notifications & Alerts</h3>
+    <p class="text-muted small mb-0">Delivery log for In-App and Simulated Email notifications received by your account</p>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <strong>Inbox ({{ notifications|length }})</strong>
+  </div>
+  <div class="card-body p-0">
+    {% if notifications %}
+      <div class="list-group list-group-flush">
+        {% for n in notifications %}
+          <div class="list-group-item p-3 {% if not n.is_read %}bg-light{% endif %}">
+            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+              <div>
+                <span class="badge {% if n.channel == 'IN_APP' %}bg-primary{% else %}bg-warning text-dark{% endif %} me-2">
+                  {{ n.channel }}
+                </span>
+                <span class="badge {% if n.status == 'DELIVERED' or n.status == 'SENT' %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                  {{ n.status }}
+                </span>
+                <strong class="{% if not n.is_read %}fw-bold text-dark{% else %}text-secondary{% endif %}">
+                  {{ n.subject }}
+                </strong>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <small class="text-muted">{{ n.created_at[:19].replace('T', ' ') }} UTC</small>
+                {% if not n.is_read %}
+                  <form method="post" action="/notifications/{{ n.id }}/read" class="m-0">
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;">Mark Read</button>
+                  </form>
+                {% else %}
+                  <span class="badge bg-light text-muted border">Read</span>
+                {% endif %}
+              </div>
+            </div>
+            <p class="mb-0 small text-secondary" style="white-space: pre-wrap; font-family: monospace;">{{ n.body }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="p-4 text-center text-muted">
+        <p class="mb-0">You have no notifications at this time.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

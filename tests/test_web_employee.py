@@ -115,3 +115,38 @@ def test_employee_can_reject_resolution(client):
     reloaded = c.incident_service.get_incident(t1, inc.id)
     from app.domain.enums import Status
     assert reloaded.status == Status.IN_PROGRESS
+
+def test_unauthenticated_notifications_redirects(client):
+    res = client.get("/notifications")
+    assert res.status_code == 303
+    assert "/login" in res.headers["location"]
+
+def test_user_can_view_and_mark_notifications(client):
+    c = app.state.container
+    admin = user(c, "admin@itsm.local")
+    t1 = user(c, "t1@itsm.local")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    
+    # Trigger notifications: assigning incident notifies assignee t1
+    c.incident_service.assign_incident(admin, inc.id, t1.id)
+    
+    # Log in as technician t1
+    _login(client, email="t1@itsm.local")
+    res = client.get("/notifications")
+    assert res.status_code == 200
+    assert "Notifications &amp; Alerts" in res.text or "Notifications & Alerts" in res.text
+    assert inc.id in res.text
+
+    # Check notification in repository and mark read
+    user_notes = c.notifications.list_for_recipient(t1.id)
+    assert len(user_notes) >= 1
+    target_id = user_notes[0]["id"]
+    
+    read_res = client.post(f"/notifications/{target_id}/read")
+    assert read_res.status_code == 303
+    
+    # Reload repository to check read status
+    updated_notes = c.notifications.list_for_recipient(t1.id)
+    target = [n for n in updated_notes if n["id"] == target_id][0]
+    assert target["is_read"] == 1
+

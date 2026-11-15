@@ -40,3 +40,20 @@ def register(request: Request, name: str = Form(), email: str = Form(), password
 
 @router.get("/logout")
 def logout(request: Request): request.session.clear(); return RedirectResponse("/login", 303)
+
+@router.get("/notifications")
+def notifications_page(request: Request):
+    uid = request.session.get("user_id")
+    if not uid: return RedirectResponse("/login", 303)
+    user = container(request).users.get(uid)
+    if not user: return RedirectResponse("/login", 303)
+    notes = container(request).notifications.list_for_recipient(user.id)
+    return templates.TemplateResponse(request, "notifications.html", {"user": user, "notifications": notes})
+
+@router.post("/notifications/{notification_id}/read")
+def mark_notification_read(request: Request, notification_id: int):
+    uid = request.session.get("user_id")
+    if not uid: return RedirectResponse("/login", 303)
+    container(request).notifications.mark_read(notification_id)
+    return RedirectResponse("/notifications", 303)
+
