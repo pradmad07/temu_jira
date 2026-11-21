@@ -71,6 +71,11 @@ class Incident:
                  assigned_to=None, created_at=None, resolution=None, acknowledged_at=None, resolved_at=None, closed_at=None, sla: Optional[SlaDeadlines] = None):
         if not (title or "").strip() or not (description or "").strip(): raise ValidationError("Title and description are required")
         if len(title) > 200 or len(description) > 5000: raise ValidationError("Title/description too long")
+        if len((description or "").strip()) < 20:
+            raise ValidationError(
+                "Please describe the problem in at least 20 characters "
+                "(what happened, what you expected, what you tried)"
+            )
         if not (1 <= impact <= 5 and 1 <= urgency <= 5): raise ValidationError("Impact and urgency must be 1-5")
         if affected_users < 1: raise ValidationError("Affected users must be at least 1")
         self._id = id or new_id("INC"); self._reporter_id = reporter_id; self._title = title.strip()

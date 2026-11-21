@@ -1,19 +1,21 @@
 """Incident use cases (owner: Kevalin). Rules: actor comes from the session, never a form field; no SQL, no HTTP in here.
 Every state change follows ONE recipe: load -> check who may do it -> ask the State object (via the Incident) ->
 save -> publish an event. Audit and notifications react to the event; this class knows nothing about them."""
-from app.domain.enums import Status
+from app.domain.enums import CommentKind, Status
 from app.domain.events import *
 from app.domain.exceptions import (NotFoundError, AuthorizationError, ValidationError, InvalidTransitionError,
                                    TechnicianUnavailableError, WorkloadExceededError)
 from app.domain.filters import IncidentFilter
-from app.domain.models import Incident, Technician
+from app.domain.models import Comment, Incident, Technician
 from app.domain.permissions import Perm, can_view_incident
 from .assignment import strategy_by_name, DEFAULT_STRATEGY
 
 class IncidentService:
-    def __init__(self, incidents, services, categories, users, bus, clock, priority_strategy, sla, config):
+    def __init__(self, incidents, services, categories, users, bus, clock,
+                 priority_strategy, sla, config, comments):
         self._incidents, self._services, self._categories, self._users = incidents, services, categories, users
         self._bus, self._clock, self._priority, self._sla, self._config = bus, clock, priority_strategy, sla, config
+        self._comments = comments
 
     # ---------- helpers
     def _load(self, incident_id) -> Incident:
@@ -130,7 +132,13 @@ class IncidentService:
     def reject_resolution(self, actor, incident_id, reason):
         inc = self._load(incident_id); self._require_reporter(actor, inc)
         if not (reason or "").strip(): raise ValidationError("Please say what is still wrong")
-        return self._apply(inc, actor, "reject", EV_REJECTED, f"Reporter says not fixed: {reason.strip()}")
+        result = self._apply(inc, actor, "reject", EV_REJECTED, f"Reporter says not fixed: {reason.strip()}")
+        # Record the reporter's reason as a REPLY comment. We write directly to the repo so
+        # we don't publish a second event (EV_REJECTED already fired -> one notification only).
+        self._comments.add(Comment(inc.id, actor.id, CommentKind.REPLY.value,
+                                   f"Resolution Rejected - Still broken: {reason.strip()}",
+                                   False, self._clock.now()))
+        return result
     def close(self, actor, incident_id):
         inc = self._load(incident_id)
         if inc.reporter_id != actor.id and not actor.can(Perm.INCIDENT_VIEW_ALL): raise AuthorizationError("Only the reporter or an administrator can close")

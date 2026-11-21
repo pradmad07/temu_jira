@@ -2,7 +2,7 @@ import pytest
 from app.domain.exceptions import AuthorizationError, ValidationError
 
 def _report(c, category):
-    return c.incident_service.create_incident(c.users.get_by_email("e1@itsm.local"), "Title", "Desc", category, "SVC-PAY", 3, 3)
+    return c.incident_service.create_incident(c.users.get_by_email("e1@itsm.local"), "Title", "This is a longer description used in tests", category, "SVC-PAY", 3, 3)
 
 def test_defaults_are_seeded(c): assert "DATABASE" in c.categories.list_active()
 

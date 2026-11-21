@@ -12,6 +12,6 @@ def test_admin_can_view_any_incident_technician_only_assigned(c):
     from app.domain.enums import Category
     from app.domain.exceptions import AuthorizationError
     import pytest
-    inc = c.incident_service.create_incident(c.users.get_by_email("e1@itsm.local"), "Db slow", "queries slow", Category.DATABASE, "SVC-DB", 3, 3)
+    inc = c.incident_service.create_incident(c.users.get_by_email("e1@itsm.local"), "Db slow", "queries are slow throughout the day", Category.DATABASE, "SVC-DB", 3, 3)
     assert c.incident_service.get_incident(c.users.get_by_email("admin@itsm.local"), inc.id).id == inc.id
     with pytest.raises(AuthorizationError): c.incident_service.get_incident(c.users.get_by_email("t1@itsm.local"), inc.id)

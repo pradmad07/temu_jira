@@ -27,7 +27,7 @@ def home(request: Request, user=technician):
             "incidents": incidents,
             "reporters": reporters,
             "active_count": c.incidents.count_active_by_technician(user.id),
-            "max_workload": user.max_workload,
+            "max_workload": getattr(user, "max_workload", None),
             "feedbacks": feedbacks,
         },
     )

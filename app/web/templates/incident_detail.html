@@ -159,6 +159,20 @@
 </div>
 {% endif %}
 
+{% if incident.status.value == 'VERIFIED' and (incident.reporter_id == user.id or user.can('incident.view_all')) %}
+<div class="card border-dark mb-4 shadow-sm">
+  <div class="card-header bg-dark text-white">
+    <strong>Close Incident</strong>
+  </div>
+  <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <p class="mb-0 text-secondary">The resolution has been verified. Close the incident to finalise it.</p>
+    <form method="post" action="{% if user.can('incident.view_all') %}/admin/incidents/{{ incident.id }}/close{% else %}/employee/incidents/{{ incident.id }}/close{% endif %}">
+      <button class="btn btn-dark">Close Incident</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
 {% if user.can('incident.assign') and incident.status.value != 'CLOSED' %}
 <div class="card shadow-sm mb-4 border-primary">
   <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">

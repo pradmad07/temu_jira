@@ -3,7 +3,7 @@ from app.domain.enums import Category, Status
 from tests.helpers import make_incident
 
 def _report(c):
-    return c.incident_service.create_incident(c.users.get_by_email("e1@itsm.local"), "Pay down", "Cannot pay", Category.APPLICATION, "SVC-PAY", 5, 5, 10)
+    return c.incident_service.create_incident(c.users.get_by_email("e1@itsm.local"), "Pay down", "Cannot pay using any credit card", Category.APPLICATION, "SVC-PAY", 5, 5, 10)
 
 def test_created_at_and_audit_time_come_from_the_injected_clock(c):
     c.clock.advance(minutes=90)

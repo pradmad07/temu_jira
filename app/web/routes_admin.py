@@ -8,6 +8,8 @@ from app.domain.filters import IncidentFilter, AuditFilter
 from app.domain.permissions import Perm
 from app.services.assignment import strategy_by_name
 from .deps import templates, container, require_permission
+from urllib.parse import quote_plus
+from app.domain.exceptions import ItsmError
 
 router = APIRouter(prefix="/admin")
 
@@ -132,10 +134,19 @@ def assign_incident(request: Request, incident_id: str, technician_id: str = For
     target = technician_id.strip() if technician_id and technician_id.strip() else None
     c.incident_service.assign_incident(user, incident_id, target)
     return RedirectResponse(f"/admin/incidents/{incident_id}?msg=Technician+assigned+successfully", 303)
+    
+@router.post("/incidents/{incident_id}/close")
+def close_incident(request: Request, incident_id: str, user=admin_reporter):
+    c = container(request)
+    try:
+        c.incident_service.close(user, incident_id)
+        return RedirectResponse(f"/admin/incidents/{incident_id}?msg=Incident+closed+successfully", 303)
+    except ItsmError as e:
+        return RedirectResponse(f"/admin/incidents/{incident_id}?error={quote_plus(str(e))}", 303)
 
 # ----------------- Users Management -----------------
 @router.get("/users")
-def list_users(request: Request, user=admin_users):
+def list_users(request: Request, user=admin_users, error: Optional[str] = None):
     c = container(request)
     all_users = c.users.list_all()
     managers = [u for u in all_users if u.role in (Role.ADMIN, Role.IT_MANAGER, Role.TEAM_LEAD)]
@@ -145,6 +156,7 @@ def list_users(request: Request, user=admin_users):
             "user": user,
             "users": all_users,
             "managers": managers,
+            "error" : error
         }
     )
 
@@ -155,11 +167,14 @@ def create_user(
     name: str = Form(),
     email: str = Form(),
     password: str = Form(),
+    confirm_password: str = Form(""),
     role: str = Form(),
     reports_to: Optional[str] = Form(None),
     skills: Optional[str] = Form(None),
     max_workload: int = Form(5),
 ):
+    if password != confirm_password:
+        return RedirectResponse("/admin/users?error=Passwords+do+not+match", 303)
     c = container(request)
     target_role = Role(role)
     extra_attrs = {}
@@ -167,11 +182,7 @@ def create_user(
         skill_list = [s.strip().upper() for s in (skills or "").split(",") if s.strip()]
         extra_attrs["skills"] = skill_list
         extra_attrs["max_workload"] = max_workload
-
-    c.admin.create_user(
-        user, target_role, name, email, password,
-        reports_to=reports_to or None, **extra_attrs
-    )
+    c.admin.create_user(user, target_role, name, email, password, reports_to=reports_to or None, **extra_attrs)
     return RedirectResponse("/admin/users?msg=User+created+successfully", 303)
 
 @router.post("/users/{user_id}/toggle-active")

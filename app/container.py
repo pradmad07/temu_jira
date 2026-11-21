@@ -37,7 +37,7 @@ class Container:
         self.priority = ScoredPriority()
         self.sla = SlaService(self.sla_policies, self.incidents, self.bus, self.clock, self.violations)
         self.incident_service = IncidentService(self.incidents, self.services, self.categories, self.users, self.bus,
-                                                self.clock, self.priority, self.sla, self.config)
+                                                self.clock, self.priority, self.sla, self.config, self.comments)
         self.collab = CollaborationService(self.incidents, self.comments, self.feedback, self.bus, self.clock)
         self.admin = AdminService(self.categories, self.users, self.services, self.sla_policies, self.config, self.bus, self.clock)
         self.reports = ReportService(self.incidents, violations=self.violations, users=self.users, services=self.services)

@@ -11,9 +11,11 @@ def home_for(user):   # role-agnostic: decided by permissions, so new roles need
     if user.can(Perm.INCIDENT_VIEW_ASSIGNED): return "/technician"
     return "/employee/incidents"
 
-def _login_page(request: Request, error=None, status=200):
+def _login_page(request: Request, error=None, status=200, section="login"):
     ctx = {"user": None, "sso": getattr(request.app.state, "sso_providers", [])}
-    if error: ctx["error"] = error
+    if error:
+        ctx["error"] = error
+        ctx["error_section"] = section
     return templates.TemplateResponse(request, "login.html", ctx, status_code=status)
 
 @router.get("/")
@@ -32,9 +34,12 @@ def login(request: Request, email: str = Form(), password: str = Form()):
     return RedirectResponse(home_for(user), 303)
 
 @router.post("/register")
-def register(request: Request, name: str = Form(), email: str = Form(), password: str = Form()):
+def register(request: Request, name: str = Form(), email: str = Form(),
+             password: str = Form(), confirm_password: str = Form("")):
+    if password != confirm_password:
+        return _login_page(request, "Passwords do not match", 400, section="register")
     try: user = container(request).auth.register(name, email, password)
-    except ItsmError as e: return _login_page(request, str(e), 400)
+    except ItsmError as e: return _login_page(request, str(e), 400, section="register")
     request.session.clear(); request.session["user_id"] = user.id
     return RedirectResponse(home_for(user), 303)
 

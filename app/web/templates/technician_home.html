@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block body %}
 <h4>Technician dashboard</h4>
-<p>Active workload: <b>{{ active_count }}/{{ max_workload }}</b></p>
+<p>Active workload:{% if max_workload is not none %} <b>{{ active_count }}/{{ max_workload }}</b>{% else %} <b>{{ active_count }}</b>{% endif %}</p>
 {% if incidents %}
 <div class="list-group">
 {% for incident in incidents %}

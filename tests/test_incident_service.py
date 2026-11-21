@@ -3,7 +3,7 @@ from app.domain.enums import Category, Status
 from app.domain.exceptions import AuthorizationError
 
 def _create(c, email="e1@itsm.local"):
-    return c.incident_service.create_incident(c.users.get_by_email(email), "Payment down", "Cannot pay", Category.APPLICATION, "SVC-PAY", 5, 5, 100)
+    return c.incident_service.create_incident(c.users.get_by_email(email), "Payment down", "Cannot pay using any credit card", Category.APPLICATION, "SVC-PAY", 5, 5, 100)
 
 def test_create_persists_and_is_audited(c):
     inc = _create(c)

@@ -36,6 +36,6 @@ def test_invalid_assignment_strategy_is_rejected():
 
 
 def test_duplicate_detector_requires_same_service_and_excludes_self():
-    incident = make_incident(title="Payment failing", description="Payment page fails")
-    other_service = make_incident(id="other", service_id="SVC-OTHER", title="Payment failing", description="Payment page fails")
+    incident = make_incident(title="Payment failing", description="Payment page fails for users")
+    other_service= make_incident(id="other", service_id="SVC-OTHER", title="Payment failing", description="Payment page fails for users")
     assert DuplicateDetector().find_candidates(incident, [incident, other_service]) == []
