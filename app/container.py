@@ -41,7 +41,7 @@ class Container:
                                                 self.clock, self.priority, self.sla, self.config, self.comments)	
         self.collab = CollaborationService(self.incidents, self.comments, self.feedback, self.bus, self.clock)
         self.admin = AdminService(self.categories, self.users, self.services, self.sla_policies, self.config, self.bus, self.clock)
-        self.reports = ReportService(self.incidents, violations=self.violations, users=self.users, services=self.services)
+        self.reports = ReportService(self.incidents, violations=self.violations)
         if auto_assign: self.bus.subscribe(AutoAssigner(self.incident_service).on_event)
         self.bus.subscribe(Escalator(self.incident_service).on_event)
 

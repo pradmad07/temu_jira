@@ -132,6 +132,46 @@ class SqliteIncidentRepository(IncidentRepository):
         sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
         params.extend([int(limit), int(offset)])
         return [_incident(r) for r in self._db.query(sql, tuple(params))]
+        
+    def count_total(self):
+        return self._db.query("SELECT COUNT(*) c FROM incidents")[0]["c"]
+
+    def count_by_status(self, statuses):
+        if not statuses:
+            return 0
+        values = tuple(s.value if hasattr(s, "value") else str(s) for s in statuses)
+        placeholders = ",".join("?" * len(values))
+        return self._db.query(
+            f"SELECT COUNT(*) c FROM incidents WHERE status IN ({placeholders})",
+            values,
+        )[0]["c"]
+
+    def count_critical(self):
+        return self._db.query(
+            "SELECT COUNT(*) c FROM incidents WHERE priority=?", (Priority.P1.name,)
+        )[0]["c"]
+
+    def technician_workload(self):
+        sql = (
+            "SELECT u.id, u.name, u.max_workload, "
+            "COUNT(CASE WHEN i.status IN ('ASSIGNED','ACKNOWLEDGED','IN_PROGRESS') THEN 1 END) as active "
+            "FROM users u "
+            "LEFT JOIN incidents i ON u.id = i.assigned_to "
+            "WHERE u.role = 'TECHNICIAN' AND u.active = 1 "
+            "GROUP BY u.id, u.name, u.max_workload "
+            "ORDER BY active DESC, u.name ASC"
+        )
+        return [(r["name"], r["active"], r["id"], r["max_workload"]) for r in self._db.query(sql)]
+
+    def counts_by_service(self):
+        sql = (
+            "SELECT s.id, s.name, COUNT(i.id) as incident_count "
+            "FROM services s "
+            "LEFT JOIN incidents i ON s.id = i.service_id "
+            "GROUP BY s.id, s.name "
+            "ORDER BY incident_count DESC, s.name ASC"
+        )
+        return [(r["name"], r["incident_count"], r["id"]) for r in self._db.query(sql)]
 
 class SqliteAuditRepository(AuditRepository):
     def __init__(self, db: Database): self._db = db
@@ -251,6 +291,13 @@ class SqliteSlaViolationRepository(SlaViolationRepository):
         return [(r["kind"], _dt(r["detected_at"])) for r in self._db.query("SELECT * FROM sla_violations WHERE incident_id=? ORDER BY detected_at", (incident_id,))]
     def list_all(self):
         return [(r["incident_id"], r["kind"], _dt(r["detected_at"])) for r in self._db.query("SELECT * FROM sla_violations ORDER BY detected_at")]
+        
+    def count_violated_incidents(self):
+        return self._db.query(
+            "SELECT COUNT(DISTINCT incident_id) c FROM sla_violations WHERE kind LIKE '%VIOLATION'"
+        )[0]["c"]
+        
+        
 
 class SqliteCommentRepository(CommentRepository):
     def __init__(self, db: Database): self._db = db

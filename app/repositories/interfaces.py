@@ -37,6 +37,27 @@ class IncidentRepository(ABC):
     def count_active_by_technician(self, technician_id: str) -> int: ...
     @abstractmethod
     def search(self, f: IncidentFilter, limit: int = 50, offset: int = 0) -> list[Incident]: ...
+    @abstractmethod
+    def count_total(self) -> int:
+        """Total number of incidents across all statuses."""
+
+    @abstractmethod
+    def count_by_status(self, statuses: tuple) -> int:
+        """Number of incidents whose status is one of `statuses`."""
+
+    @abstractmethod
+    def count_critical(self) -> int:
+        """Number of P1 incidents across all statuses (including resolved ones)."""
+
+    @abstractmethod
+    def technician_workload(self) -> list[tuple]:
+        """Per active technician, (name, active_count, technician_id, max_workload),
+        sorted by active_count desc then name asc."""
+
+    @abstractmethod
+    def counts_by_service(self) -> list[tuple]:
+        """Per service, (name, incident_count, service_id),
+        sorted by incident_count desc then name asc."""
 
 class AuditRepository(ABC):
     @abstractmethod
