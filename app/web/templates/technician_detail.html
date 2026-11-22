@@ -81,6 +81,43 @@
   </div>
 </div>
 
+<div class="card shadow-sm mb-4 border-primary">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <strong>Incident Brief</strong>
+    <span class="badge bg-light text-primary">Deterministic, offline</span>
+  </div>
+  <div class="card-body">
+    <h6 class="mb-2">{{ summary.headline }}</h6>
+    <p class="mb-2">{{ summary.description }}</p>
+    <ul class="mb-0 small">
+      {% for fact in summary.facts %}<li>{{ fact }}</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4 border-warning">
+  <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+    <strong>Suggested resolutions from historical incidents</strong>
+    <span class="small">Technician review required</span>
+  </div>
+  <div class="card-body">
+    {% if resolution_suggestions %}
+      {% for suggestion in resolution_suggestions %}
+      <div class="border rounded p-3 mb-2">
+        <div class="d-flex justify-content-between">
+          <strong>{{ suggestion.title }}</strong>
+          <span class="badge bg-secondary">{{ "%.0f"|format(suggestion.score * 100) }}% match</span>
+        </div>
+        <small class="text-muted">Source: {{ suggestion.incident_id }} - {{ suggestion.reasons|join(", ") }}</small>
+        <p class="mt-2 mb-0" style="white-space: pre-wrap;">{{ suggestion.resolution }}</p>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-muted mb-0">No sufficiently similar resolved incident was found.</p>
+    {% endif %}
+  </div>
+</div>
+
 <!-- Investigation Details Card -->
 {% if incident.acknowledged_at or incident.status.value in ('IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED') %}
 <div class="card shadow-sm mb-4 border-info">

@@ -14,4 +14,7 @@ Environment variables: `SECRET_KEY` (session signing, set it outside development
 `ITSM_SCAN_SECONDS` (SLA scan interval, default 30, 0 = off), `ITSM_HTTPS=1` (secure cookies + HSTS when served over HTTPS), `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` (Google sign-in, optional), `ITSM_SSO_DOMAINS` (comma-separated allowed email domains for SSO).
 HTTPS and SSO setup: docs/SSO_AND_HTTPS.md.
 
+## Explainable incident intelligence
+Technician and admin incident pages include an extractive incident brief and ranked suggestions from previously resolved incidents on the same service. Matching is deterministic, offline, and citeable; it does not generate or invent resolutions. Human technicians remain responsible for reviewing and applying any suggestion.
+
 Read in this order: docs/DESIGN.md -> docs/PLAN.md (owners, schedule) -> app/services/incident_service.py. Also docs/SECURITY.md.

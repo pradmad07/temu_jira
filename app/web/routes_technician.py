@@ -46,6 +46,8 @@ def detail(request: Request, incident_id: str, user=technician):
     reporter = c.users.get(incident.reporter_id)
     assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
     service = c.services.get(incident.service_id)
+    summary = c.advisor.summarize(incident)
+    resolution_suggestions = c.advisor.suggest_resolutions(incident)
     return templates.TemplateResponse(
         request,
         "technician_detail.html",
@@ -60,6 +62,8 @@ def detail(request: Request, incident_id: str, user=technician):
             "duplicates": duplicates,
             "recommendations": strategy.recommend(incident, candidates, workloads),
             "feedback": feedback,
+            "summary": summary,
+            "resolution_suggestions": resolution_suggestions,
         },
     )
 

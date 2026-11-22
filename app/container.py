@@ -15,6 +15,7 @@ from app.services.sla_service import SlaService
 from app.services.notifications import NotificationService, InAppChannel, SimulatedEmailChannel
 from app.services.reports import ReportService
 from app.services.escalation import Escalator
+from app.services.intelligence import IncidentAdvisor
 
 class Container:
     def __init__(self, db_path=":memory:", clock=None, auto_assign=True):
@@ -42,6 +43,7 @@ class Container:
         self.collab = CollaborationService(self.incidents, self.comments, self.feedback, self.bus, self.clock)
         self.admin = AdminService(self.categories, self.users, self.services, self.sla_policies, self.config, self.bus, self.clock)
         self.reports = ReportService(self.incidents, violations=self.violations)
+        self.advisor = IncidentAdvisor(self.incidents)
         if auto_assign: self.bus.subscribe(AutoAssigner(self.incident_service).on_event)
         self.bus.subscribe(Escalator(self.incident_service).on_event)
 

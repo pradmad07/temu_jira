@@ -64,6 +64,7 @@ def detail(
     reporter = c.users.get(incident.reporter_id)
     assignee = c.users.get(incident.assigned_to) if incident.assigned_to else None
     service = c.services.get(incident.service_id)
+    summary = c.advisor.summarize(incident)
     return templates.TemplateResponse(
         request, "incident_detail.html",
         {
@@ -76,6 +77,7 @@ def detail(
             "comments": comments,
             "feedback": feedback,
             "error": request.query_params.get("error"),
+            "summary": summary,
         }
     )
 

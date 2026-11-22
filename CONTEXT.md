@@ -28,3 +28,31 @@ Complete the Pradhyumn workstream and restore a green test suite.
 - P8 duplicate/recommendation display and P9 additional edge-case tests are complete.
 - P10 report section and screenshots remain a manual deliverable.
 - Do not commit the supplied PDFs or image; they are project inputs, not application source.
+
+## Session Checkpoint - 2026-11-22
+- Repository cloned to `/Users/pirhoalphadelta/temu_jira`; local `main` is at `0f6486adee5f426ab309593ad6cd89e97437cc18`.
+- Removed the confirmed older duplicate checkout at `/Users/pirhoalphadelta/OOPS/temu_jira`.
+- Read the project PDF `OOP_S1_2026-2027_Project (1).pdf`.
+- Test suite result: `146 passed in 34.98s`.
+
+### Requirement assessment
+- The core MVP is substantially implemented: complete lifecycle, employee/technician/admin roles, priority scoring, two assignment strategies, SLA deadlines/scanning, in-app/email notifications, audit trail, search/reporting, duplicate detection, smart technician recommendation, and SQLite persistence.
+- Google SSO is implemented through `/login/google` and documented in `docs/SSO_AND_HTTPS.md`.
+- AI-generated incident summaries and resolution suggestions are not implemented.
+- Remaining deliverables include a final PDF report, ER diagram, screenshots, and a 15-20 minute three-workflow demo video.
+
+### Innovation recommendation
+Google SSO is valuable for authentication/OAuth and the Technical Depth rubric, but it is primarily a security integration rather than an Innovation Challenge item. AI-assisted incident summary plus historically based resolution suggestions is a direct innovation and should be implemented as a local, explainable first stage: rank historical resolutions using duplicate/similarity logic, show source incidents and confidence, and use an external LLM only optionally for summarization. Google SSO plus this explainable AI layer is the strongest complementary pairing.
+
+## Session Checkpoint - 2026-11-22 16:10
+- Implemented `app/services/intelligence.py` with deterministic incident extraction and historical resolution ranking.
+- Resolution candidates are restricted to resolved/verified/closed incidents from the same service.
+- Added technician and admin detail context wiring plus a technician-page intelligence card.
+- Remaining: focused tests, full suite, load probe, documentation update, and production-hardening review.
+
+## Session Checkpoint - 2026-11-22 16:15
+- Added shared incident brief and historical resolution cards to employee/admin/technician detail pages.
+- Added SQLite busy timeout and WAL/NORMAL pragmas for better concurrent file-database behavior.
+- Added README documentation for explainable offline incident intelligence.
+- Full suite: `148 passed in 34.65s`.
+- Load probe: 500 incident writes completed in `0.060s`; 100 summaries completed in `0.001s` on an in-memory database.
