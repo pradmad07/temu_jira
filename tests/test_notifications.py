@@ -6,10 +6,11 @@ from app.domain.enums import Priority
 from app.services.notifications import NotificationService, InAppChannel, SimulatedEmailChannel, NotificationChannel
 from tests.helpers import report, user
 
-def test_one_event_reaches_two_channels():
+def test_one_event_reaches_two_channels(c):
     inapp, email = InAppChannel(), SimulatedEmailChannel()
-    NotificationService([inapp, email]).on_event(
-        IncidentEvent(EV_ASSIGNED, "INC1", "U-ADMIN", "CLASSIFIED", "ASSIGNED", "Assigned to Tina")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    NotificationService([inapp, email], users=c.users, incidents=c.incidents).on_event(
+        IncidentEvent(EV_ASSIGNED, inc.id, "U-ADMIN", "CLASSIFIED", "ASSIGNED", "Assigned to Tina")
     )
     assert len(inapp.sent) == 1 and len(email.sent) == 1
 
@@ -44,19 +45,16 @@ def test_technician_notified_on_assignment(c):
     assert len(tech_notifs) >= 1
     assert any(inc.id in n["subject"] for n in tech_notifs)
 
-def test_failing_channel_does_not_break_other_channels():
+def test_failing_channel_does_not_break_other_channels(c):
     class BrokenChannel(NotificationChannel):
         def send(self, recipient_id, subject, body):
             raise RuntimeError("Network down or SMTP connection timeout")
 
     broken = BrokenChannel()
     working = InAppChannel()
-
-    # Observer resilience: broken channel failure must not block working channel
-    service = NotificationService([broken, working])
-    service.on_event(
-        IncidentEvent(EV_CREATED, "INC99", "U-E1", None, "NEW", "System reboot issue")
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    NotificationService([broken, working], users=c.users, incidents=c.incidents).on_event(
+        IncidentEvent(EV_ASSIGNED, inc.id, "U-ADMIN", "CLASSIFIED", "ASSIGNED", "Assigned to Tina")
     )
-
     assert len(working.sent) == 1
     assert len(broken.sent) == 0

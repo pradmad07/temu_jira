@@ -111,8 +111,13 @@ class NotificationRepository(ABC):
     @abstractmethod
     def add(self, recipient_id: str, channel: str, subject: str, body: str, status: str = "SENT", created_at: Optional[datetime] = None) -> int: ...
     @abstractmethod
-    def list_for_recipient(self, recipient_id: str, unread_only: bool = False) -> list[dict]: ...
+    def list_for_recipient(self, recipient_id: str, unread_only: bool = False, channel: Optional[str] = None) -> list[dict]:
+        """Newest first. Optional channel filter; None = all channels."""
     @abstractmethod
-    def mark_read(self, notification_id: int) -> None: ...
+    def count_unread(self, recipient_id: str, channel: str = "IN_APP") -> int:
+        """SQL COUNT of unread rows for this recipient in the given channel (navbar bell)."""
+    @abstractmethod
+    def mark_read(self, notification_id: int, recipient_id: str) -> None:
+        """Sets is_read=1 only when the row belongs to recipient_id; otherwise silently does nothing."""
     @abstractmethod
     def mark_all_read(self, recipient_id: str) -> None: ...

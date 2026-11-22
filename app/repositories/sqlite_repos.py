@@ -284,10 +284,26 @@ class SqliteNotificationRepository(NotificationRepository):
             (recipient_id, channel, subject, body, status, dt.isoformat())
         )
         return cur.lastrowid
-    def list_for_recipient(self, recipient_id, unread_only=False):
-        sql = "SELECT * FROM notifications WHERE recipient_id=?" + (" AND is_read=0" if unread_only else "") + " ORDER BY id DESC"
-        return [dict(r) for r in self._db.query(sql, (recipient_id,))]
-    def mark_read(self, notification_id):
-        self._db.execute("UPDATE notifications SET is_read=1 WHERE id=?", (notification_id,))
+    def list_for_recipient(self, recipient_id, unread_only=False, channel=None):
+        sql = "SELECT * FROM notifications WHERE recipient_id=?"
+        params = [recipient_id]
+        if unread_only:
+            sql += " AND is_read=0"
+        if channel is not None:
+            sql += " AND channel=?"
+            params.append(channel)
+        sql += " ORDER BY id DESC"
+        return [dict(r) for r in self._db.query(sql, tuple(params))]
+    def count_unread(self, recipient_id, channel="IN_APP"):
+        rows = self._db.query(
+            "SELECT COUNT(*) AS c FROM notifications WHERE recipient_id=? AND is_read=0 AND channel=?",
+            (recipient_id, channel)
+        )
+        return rows[0]["c"]
+    def mark_read(self, notification_id, recipient_id):
+        self._db.execute(
+            "UPDATE notifications SET is_read=1 WHERE id=? AND recipient_id=?",
+            (notification_id, recipient_id)
+        )
     def mark_all_read(self, recipient_id):
         self._db.execute("UPDATE notifications SET is_read=1 WHERE recipient_id=?", (recipient_id,))

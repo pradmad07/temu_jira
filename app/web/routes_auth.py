@@ -52,14 +52,18 @@ def notifications_page(request: Request):
     if not uid: return RedirectResponse("/login", 303)
     user = container(request).users.get(uid)
     if not user: return RedirectResponse("/login", 303)
-    notes = container(request).notifications.list_for_recipient(user.id)
-    return templates.TemplateResponse(request, "notifications.html", {"user": user, "notifications": notes})
+    c = container(request)
+    in_app       = c.notifications.list_for_recipient(user.id, channel="IN_APP")
+    email_outbox = c.notifications.list_for_recipient(user.id, channel="EMAIL")
+    return templates.TemplateResponse(request, "notifications.html", {
+        "user": user, "notifications": in_app, "email_outbox": email_outbox,
+    })
 
 @router.post("/notifications/{notification_id}/read")
 def mark_notification_read(request: Request, notification_id: int):
     uid = request.session.get("user_id")
     if not uid: return RedirectResponse("/login", 303)
-    container(request).notifications.mark_read(notification_id)
+    container(request).notifications.mark_read(notification_id, uid)
     return RedirectResponse("/notifications", 303)
 
 @router.post("/notifications/read-all")

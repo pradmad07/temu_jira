@@ -3,11 +3,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <h3 class="mb-0">Notifications & Alerts</h3>
-    <p class="text-muted small mb-0">Delivery log for In-App and Simulated Email notifications received by your account</p>
+    <p class="text-muted small mb-0">In-app alerts for your account. Simulated emails live in the collapsed outbox below.</p>
   </div>
 </div>
 
-<div class="card shadow-sm">
+<!-- Main inbox: IN_APP only -->
+<div class="card shadow-sm mb-4">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
     <strong>Inbox ({{ notifications|length }})</strong>
     {% set unread = unread_count_for(request, user.id) %}
@@ -24,9 +25,6 @@
           <div class="list-group-item p-3 {% if not n.is_read %}bg-light{% endif %}">
             <div class="d-flex w-100 justify-content-between align-items-center mb-1">
               <div>
-                <span class="badge {% if n.channel == 'IN_APP' %}bg-primary{% else %}bg-warning text-dark{% endif %} me-2">
-                  {{ n.channel }}
-                </span>
                 <span class="badge {% if n.status == 'DELIVERED' or n.status == 'SENT' %}bg-success{% else %}bg-secondary{% endif %} me-2">
                   {{ n.status }}
                 </span>
@@ -54,6 +52,40 @@
         <p class="mb-0">You have no notifications at this time.</p>
       </div>
     {% endif %}
+  </div>
+</div>
+
+<!-- Email outbox: EMAIL only, collapsed -->
+<div class="card shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <button class="btn btn-link text-decoration-none p-0 fw-bold text-dark" type="button"
+            data-bs-toggle="collapse" data-bs-target="#emailOutbox" aria-expanded="false" aria-controls="emailOutbox">
+      &#128231; Simulated email outbox ({{ email_outbox|length }})
+    </button>
+    <span class="text-muted small">Delivery log kept for audit — not counted in the bell</span>
+  </div>
+  <div class="collapse" id="emailOutbox">
+    <div class="card-body p-0">
+      {% if email_outbox %}
+        <div class="list-group list-group-flush">
+          {% for n in email_outbox %}
+            <div class="list-group-item p-3">
+              <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                <div>
+                  <span class="badge bg-warning text-dark me-2">EMAIL</span>
+                  <span class="badge {% if n.status == 'SENT' or n.status == 'DELIVERED' %}bg-success{% else %}bg-secondary{% endif %} me-2">{{ n.status }}</span>
+                  <strong class="text-secondary">{{ n.subject }}</strong>
+                </div>
+                <small class="text-muted">{{ n.created_at|ist }}</small>
+              </div>
+              <p class="mb-0 small text-secondary" style="white-space: pre-wrap; font-family: monospace;">{{ n.body }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-3 text-center text-muted small">No simulated emails have been sent.</div>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endblock %}

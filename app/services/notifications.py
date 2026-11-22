@@ -1,5 +1,7 @@
 """OBSERVER + ADAPTER (owner: Gaurav). One event -> every channel. Add a channel = add a class."""
+import logging
 from abc import ABC, abstractmethod
+from collections import deque
 from typing import Optional
 from app.domain.events import (
     IncidentEvent, EV_CREATED, EV_CLASSIFIED, EV_ASSIGNED, EV_ACKNOWLEDGED,
@@ -12,7 +14,7 @@ from app.domain.permissions import Perm
 
 class NotificationChannel(ABC):
     def __init__(self, repo=None):
-        self.sent: list = []     # delivery log (also persist in `notifications` table)
+        self.sent: deque = deque(maxlen=500)    # bounded in-memory log; len() and [i] still work
         self._repo = repo
 
     @abstractmethod
@@ -65,17 +67,17 @@ class NotificationService:
         self._incidents = incidents
 
     def on_event(self, event: IncidentEvent) -> None:
-        """Decide who is notified for each event type, then send via every channel."""
         recipients = self._resolve_recipients(event)
         subject, body = self._build_message(event)
-
         for recipient_id in recipients:
             for channel in self._channels:
                 try:
                     channel.send(recipient_id, subject, body)
                 except Exception:
-                    # One failing channel must never crash the service (Observer resilience)
-                    pass
+                    logging.exception(
+                        "Notification channel %s failed for recipient %s on event %s",
+                        type(channel).__name__, recipient_id, event.type,
+                    )
 
     def _resolve_recipients(self, event: IncidentEvent) -> set[str]:
         recipients: set[str] = set()
@@ -90,7 +92,9 @@ class NotificationService:
             reporter_id = inc.reporter_id
             assignee_id = inc.assigned_to
 
-            if event.type in (EV_CREATED, EV_CLASSIFIED):
+            # (c) Only CLASSIFIED carries the "priority + deadline" summary.
+            # EV_CREATED is intentionally omitted — the reporter already knows they just reported it.
+            if event.type == EV_CLASSIFIED:
                 if reporter_id:
                     recipients.add(reporter_id)
 
@@ -118,19 +122,16 @@ class NotificationService:
 
             elif event.type in (EV_SLA_WARNING, EV_SLA_VIOLATED, EV_ESCALATED):
                 if assignee_id:
-                    # current behaviour: notify the assignee, and on escalation also their manager
                     if event.type == EV_ESCALATED and self._users:
                         user_obj = self._users.get(assignee_id)
                         if user_obj and user_obj.reports_to:
                             recipients.add(user_obj.reports_to)
                     recipients.add(assignee_id)
                 elif self._users:
-                    # no assignee: alert everyone who can triage (team lead, admin, IT manager)
-                    # — the reporter cannot act on the breach, so they are excluded
                     for u in self._users.list_all():
                         if u.active and u.can(Perm.INCIDENT_ASSIGN):
                             recipients.add(u.id)
-                                
+
             elif event.type == EV_INFO_REQUESTED:
                 if reporter_id:
                     recipients.add(reporter_id)
@@ -146,9 +147,9 @@ class NotificationService:
             elif event.type == EV_FEEDBACK:
                 if assignee_id:
                     recipients.add(assignee_id)
-        else:
-            fallback = event.actor_id or event.incident_id or "user"
-            recipients.add(fallback)
+
+        # (b) Events with no incident (CONFIG_CHANGED, USER_CHANGED) are audit-only.
+        # The previous fallback "add the actor" turned admin actions into self-notifications.
 
         return recipients
 

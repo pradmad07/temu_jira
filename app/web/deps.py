@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from app.domain.exceptions import AuthenticationError, AuthorizationError
+import logging
 
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
 
@@ -30,9 +31,9 @@ def get_unread_count(request: Request, user_id: str) -> int:
     try:
         c = container(request)
         if hasattr(c, "notifications"):
-            return len(c.notifications.list_for_recipient(user_id, unread_only=True))
+            return c.notifications.count_unread(user_id, channel="IN_APP")
     except Exception:
-        pass
+        logging.exception("Failed to count unread notifications for user %s", user_id)
     return 0
 
 templates.env.globals["unread_count_for"] = get_unread_count
