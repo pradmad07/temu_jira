@@ -14,6 +14,7 @@ from app.services.priority import ScoredPriority
 from app.services.sla_service import SlaService
 from app.services.notifications import NotificationService, InAppChannel, SimulatedEmailChannel
 from app.services.reports import ReportService
+from app.services.escalation import Escalator
 
 class Container:
     def __init__(self, db_path=":memory:", clock=None, auto_assign=True):
@@ -37,10 +38,11 @@ class Container:
         self.priority = ScoredPriority()
         self.sla = SlaService(self.sla_policies, self.incidents, self.bus, self.clock, self.violations)
         self.incident_service = IncidentService(self.incidents, self.services, self.categories, self.users, self.bus,
-                                                self.clock, self.priority, self.sla, self.config, self.comments)
+                                                self.clock, self.priority, self.sla, self.config, self.comments)	
         self.collab = CollaborationService(self.incidents, self.comments, self.feedback, self.bus, self.clock)
         self.admin = AdminService(self.categories, self.users, self.services, self.sla_policies, self.config, self.bus, self.clock)
         self.reports = ReportService(self.incidents, violations=self.violations, users=self.users, services=self.services)
         if auto_assign: self.bus.subscribe(AutoAssigner(self.incident_service).on_event)
+        self.bus.subscribe(Escalator(self.incident_service).on_event)
 
 def build_container(db_path=":memory:", clock=None, auto_assign=True) -> Container: return Container(db_path, clock, auto_assign)

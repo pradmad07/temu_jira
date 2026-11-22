@@ -9,6 +9,7 @@ from app.domain.filters import IncidentFilter
 from app.domain.models import Comment, Incident, Technician
 from app.domain.permissions import Perm, can_view_incident
 from .assignment import strategy_by_name, DEFAULT_STRATEGY
+import logging
 
 class IncidentService:
     def __init__(self, incidents, services, categories, users, bus, clock,
@@ -80,6 +81,39 @@ class IncidentService:
         """System action (called by the AutoAssigner observer). Leaves the incident CLASSIFIED for a human if nobody fits."""
         inc = self._load(incident_id)
         return inc if inc.status != Status.CLASSIFIED else self._assign(inc, self._choose(inc), None)
+        
+    def escalate(self, incident_id) -> Incident:
+        """System action: on an unacknowledged P1 SLA breach, reassign to the first manager
+        up the current assignee's reports_to chain who can work incidents (has INCIDENT_WORK).
+        Returns the incident; does nothing (and logs) when:
+        - the incident is unassigned (no chain to walk from),
+        - no one up the chain can work incidents,
+        - the walk would land on the current owner."""
+        inc = self._load(incident_id)
+        if inc.assigned_to is None:
+            logging.info("Cannot escalate %s: incident is unassigned", incident_id)
+            return inc
+        current = self._users.get(inc.assigned_to)
+        if current is None:
+            logging.info("Cannot escalate %s: assignee %s not found", incident_id, inc.assigned_to)
+            return inc
+        next_id = current.reports_to
+        while next_id is not None:
+            candidate = self._users.get(next_id)
+            if candidate is None:
+                logging.info("Cannot escalate %s: manager %s not found", incident_id, next_id)
+                return inc
+            if candidate.id == inc.assigned_to:
+                logging.info("Cannot escalate %s: already owned by %s", incident_id, candidate.name)
+                return inc
+            if candidate.active and candidate.can(Perm.INCIDENT_WORK):
+                try:
+                    return self._assign(inc, candidate, None)   # actor=None: system action
+                except (TechnicianUnavailableError, WorkloadExceededError) as ex:
+                    logging.info("Cannot escalate %s to %s: %s", incident_id, candidate.name, ex)
+            next_id = candidate.reports_to
+        logging.info("Cannot escalate %s: no qualified manager in chain", incident_id)
+        return inc
 
     def _choose(self, inc):
         strategy = strategy_by_name(self._config.get("assignment_strategy", DEFAULT_STRATEGY))

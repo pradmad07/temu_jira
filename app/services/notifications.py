@@ -8,6 +8,7 @@ from app.domain.events import (
     EV_PRIORITY_CHANGED, EV_NOTE_ADDED, EV_INFO_REQUESTED, EV_INFO_PROVIDED,
     EV_FEEDBACK
 )
+from app.domain.permissions import Perm
 
 class NotificationChannel(ABC):
     def __init__(self, repo=None):
@@ -115,22 +116,21 @@ class NotificationService:
                 if assignee_id:
                     recipients.add(assignee_id)
 
-            elif event.type in (EV_SLA_WARNING, EV_SLA_VIOLATED):
+            elif event.type in (EV_SLA_WARNING, EV_SLA_VIOLATED, EV_ESCALATED):
                 if assignee_id:
+                    # current behaviour: notify the assignee, and on escalation also their manager
+                    if event.type == EV_ESCALATED and self._users:
+                        user_obj = self._users.get(assignee_id)
+                        if user_obj and user_obj.reports_to:
+                            recipients.add(user_obj.reports_to)
                     recipients.add(assignee_id)
-                elif reporter_id:
-                    recipients.add(reporter_id)
-
-            elif event.type == EV_ESCALATED:
-                if assignee_id and self._users:
-                    user_obj = self._users.get(assignee_id)
-                    if user_obj and user_obj.reports_to:
-                        recipients.add(user_obj.reports_to)
-                if assignee_id:
-                    recipients.add(assignee_id)
-                if not recipients and reporter_id:
-                    recipients.add(reporter_id)
-
+                elif self._users:
+                    # no assignee: alert everyone who can triage (team lead, admin, IT manager)
+                    # — the reporter cannot act on the breach, so they are excluded
+                    for u in self._users.list_all():
+                        if u.active and u.can(Perm.INCIDENT_ASSIGN):
+                            recipients.add(u.id)
+                                
             elif event.type == EV_INFO_REQUESTED:
                 if reporter_id:
                     recipients.add(reporter_id)
