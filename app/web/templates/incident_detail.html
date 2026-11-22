@@ -219,7 +219,41 @@
 </div>
 {% endif %}
 
-
+{% if user.can('incident.assign') and incident.status.value not in ('VERIFIED', 'CLOSED') %}
+<div class="card shadow-sm mb-4 border-warning">
+  <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+    <strong>Change Priority</strong>
+    <span class="badge bg-light text-dark">Current: {{ incident.priority.name if incident.priority else 'Unclassified' }}</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/admin/incidents/{{ incident.id }}/priority" class="row g-2 align-items-center">
+      <div class="col-auto">
+        <label class="form-label mb-0 fw-bold small">New Priority:</label>
+      </div>
+      <div class="col-auto">
+        <select name="priority" class="form-select form-select-sm" required>
+          {% for p in priorities %}
+            <option value="{{ p.name }}" {% if incident.priority and incident.priority.name == p.name %}selected{% endif %}>
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col">
+        <input type="text" name="reason" class="form-control form-control-sm"
+               placeholder="Reason for change (required, shown in audit trail)" required maxlength="200">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-warning btn-sm">Apply</button>
+      </div>
+    </form>
+    <div class="form-text mt-1">
+      Changing priority recomputes the SLA deadlines from the original creation time.
+      Recorded as <code>PRIORITY_CHANGED</code> in the audit trail.
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% if incident.reporter_id == user.id and incident.status.value == 'RESOLVED' %}
 <div class="card border-primary mb-4 shadow-sm">

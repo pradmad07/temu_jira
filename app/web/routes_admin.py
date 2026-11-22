@@ -125,6 +125,7 @@ def inspect_incident(request: Request, incident_id: str, user=admin_reporter):
             "feedback": feedback,
             "recommendations": recommendations,
             "technicians": technicians,
+            "priorities": list(Priority),      # ← the only place this line belongs
         }
     )
 
@@ -134,6 +135,27 @@ def assign_incident(request: Request, incident_id: str, technician_id: str = For
     target = technician_id.strip() if technician_id and technician_id.strip() else None
     c.incident_service.assign_incident(user, incident_id, target)
     return RedirectResponse(f"/admin/incidents/{incident_id}?msg=Technician+assigned+successfully", 303)
+    
+@router.post("/incidents/{incident_id}/priority")
+def change_priority(
+    request: Request,
+    incident_id: str,
+    priority: str = Form(),
+    reason: str = Form(),
+    user=admin_reporter,
+):
+    c = container(request)
+    try:
+        pr = Priority[priority]
+    except KeyError:
+        return RedirectResponse(
+            f"/admin/incidents/{incident_id}?error={quote_plus(f'Unknown priority {priority}')}", 303
+        )
+    try:
+        c.incident_service.change_priority(user, incident_id, pr, reason)
+        return RedirectResponse(f"/admin/incidents/{incident_id}?msg=Priority+changed+to+{priority}", 303)
+    except ItsmError as e:
+        return RedirectResponse(f"/admin/incidents/{incident_id}?error={quote_plus(str(e))}", 303)
     
 @router.post("/incidents/{incident_id}/close")
 def close_incident(request: Request, incident_id: str, user=admin_reporter):

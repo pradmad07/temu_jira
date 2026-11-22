@@ -146,3 +146,48 @@ def test_admin_can_assign_technician_to_incident(client):
     reloaded = c.incident_service.get_incident(user(c, "admin@itsm.local"), inc.id)
     assert reloaded.assigned_to == t1.id
 
+def test_admin_can_change_priority(client):
+    from tests.helpers import report
+    from app.main import app
+    from app.domain.enums import Priority
+    c = app.state.container
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    _login(client, email="admin@itsm.local")
+
+    res = client.post(f"/admin/incidents/{inc.id}/priority",
+                      data={"priority": "P1", "reason": "Production checkout blocked"})
+    assert res.status_code == 303
+    assert "msg=" in res.headers["location"]
+
+    reloaded = c.incidents.get(inc.id)
+    assert reloaded.priority == Priority.P1
+    # change_priority recomputes SLA from created_at using the new priority's default policy
+    assert reloaded.sla.resolution_due == reloaded.created_at + __import__("datetime").timedelta(minutes=30)
+
+
+def test_priority_change_requires_reason(client):
+    from tests.helpers import report
+    from app.main import app
+    c = app.state.container
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")   # default P3
+    original = c.incidents.get(inc.id).priority
+    _login(client, email="admin@itsm.local")
+
+    res = client.post(f"/admin/incidents/{inc.id}/priority",
+                      data={"priority": "P1", "reason": "   "})                    # whitespace reason
+    assert res.status_code == 303
+    assert "error=" in res.headers["location"]
+    assert c.incidents.get(inc.id).priority == original
+
+
+def test_unknown_priority_is_rejected(client):
+    from tests.helpers import report
+    from app.main import app
+    c = app.state.container
+    inc = report(c, email="e1@itsm.local", service="SVC-DB", category="DATABASE")
+    _login(client, email="admin@itsm.local")
+
+    res = client.post(f"/admin/incidents/{inc.id}/priority",
+                      data={"priority": "PX", "reason": "typo"})
+    assert res.status_code == 303
+    assert "error=" in res.headers["location"]
