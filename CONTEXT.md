@@ -56,3 +56,14 @@ Google SSO is valuable for authentication/OAuth and the Technical Depth rubric, 
 - Added README documentation for explainable offline incident intelligence.
 - Full suite: `148 passed in 34.65s`.
 - Load probe: 500 incident writes completed in `0.060s`; 100 summaries completed in `0.001s` on an in-memory database.
+
+## Final Team-Integration Checkpoint - 2026-11-22
+- Fetched and reviewed the latest remote `main`.
+- Recent teammate work from `0f6486a..b2f6667` contains demo-data tooling (`tools/demo_data.py`) and has no file overlap with the incident-intelligence implementation.
+- Rebasing and pushing produced the combined branch commit `405ec4c`, which is now synchronized with `origin/main`.
+- Full combined suite: `148 passed in 34.56s`.
+- SQLite scale probe:
+  - 5,000 incident writes: 1.705 seconds, about 2,933 writes/second.
+  - 1,000 incident summaries: 0.007 seconds.
+  - 500 historical-resolution probes: 4.680 seconds.
+  - 1,000-row category filter: returned 1,000 rows.
